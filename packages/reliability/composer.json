@@ -1,0 +1,51 @@
+{
+    "name": "hyperf-apex/reliability",
+    "description": "Apex reliability suite (RateLimit, Idempotency, Outbox, Notify, Outbound) for Hyperf",
+    "type": "library",
+    "license": "Apache-2.0",
+    "keywords": [
+        "hyperf",
+        "swoole",
+        "apex",
+        "rate-limit",
+        "idempotency"
+    ],
+    "homepage": "https://github.com/lbg-sys/hyperf-apex-reliability",
+    "support": {
+        "issues": "https://github.com/lbg-sys/hyperf-apex-reliability/issues",
+        "source": "https://github.com/lbg-sys/hyperf-apex-reliability"
+    },
+    "authors": [
+        {
+            "name": "lbg-sys",
+            "homepage": "https://github.com/lbg-sys"
+        }
+    ],
+    "require": {
+        "php": ">=8.4",
+        "hyperf-apex/core": "^1.0",
+        "hyperf/cache": "~3.2.0",
+        "hyperf/database": "~3.2.0",
+        "hyperf/guzzle": "~3.2.0",
+        "hyperf/redis": "~3.2.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Hyperf\\Apex\\Reliability\\": "src/",
+            "Hyperf\\Apex\\RateLimit\\": "src/RateLimit/",
+            "Hyperf\\Apex\\Idempotency\\": "src/Idempotency/",
+            "Hyperf\\Apex\\Outbox\\": "src/Outbox/",
+            "Hyperf\\Apex\\Notify\\": "src/Notify/",
+            "Hyperf\\Apex\\Outbound\\": "src/Outbound/"
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "1.0.x-dev",
+            "dev-main": "1.0.x-dev"
+        },
+        "hyperf": {
+            "config": "Hyperf\\Apex\\Reliability\\ConfigProvider"
+        }
+    }
+}

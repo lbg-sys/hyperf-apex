@@ -1,0 +1,826 @@
+{
+    "openapi": "3.1.1",
+    "info": {
+        "title": "示例接口",
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "https://api.example.com",
+            "description": "生产"
+        }
+    ],
+    "paths": {
+        "/advanced/get_detail": {
+            "get": {
+                "tags": [
+                    "示例"
+                ],
+                "summary": "查询条目详情",
+                "operationId": "get_advanced_get_detail",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "description": "页码",
+                            "minimum": 1,
+                            "default": 1
+                        }
+                    },
+                    {
+                        "name": "keyword",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "description": "关键词",
+                            "maxLength": 32,
+                            "default": ""
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "code": {
+                                            "type": "integer",
+                                            "description": "业务状态码，0 表示成功"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "description": "提示信息"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/FixtureItemDTO",
+                                            "description": "业务数据"
+                                        }
+                                    },
+                                    "required": [
+                                        "code",
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/BadRequest"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "409": {
+                        "$ref": "#/components/responses/Conflict"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/UnprocessableEntity"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/TooManyRequests"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/InternalServerError"
+                    }
+                },
+                "x-apifox-name": "查询条目详情",
+                "x-apifox-folder": "示例/进阶"
+            }
+        },
+        "/advanced/get_page": {
+            "get": {
+                "tags": [
+                    "示例"
+                ],
+                "summary": "分页查询条目",
+                "operationId": "get_advanced_get_page",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "description": "页码",
+                            "minimum": 1,
+                            "default": 1
+                        }
+                    },
+                    {
+                        "name": "keyword",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "description": "关键词",
+                            "maxLength": 32,
+                            "default": ""
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "code": {
+                                            "type": "integer",
+                                            "description": "业务状态码，0 表示成功"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "description": "提示信息"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/PaginationResultDTO_list_FixtureItemDTO",
+                                            "description": "业务数据"
+                                        }
+                                    },
+                                    "required": [
+                                        "code",
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/BadRequest"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/UnprocessableEntity"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/InternalServerError"
+                    }
+                },
+                "x-apifox-name": "分页查询条目",
+                "x-apifox-folder": "示例/进阶"
+            }
+        },
+        "/advanced/upload": {
+            "post": {
+                "tags": [
+                    "示例"
+                ],
+                "summary": "上传附件",
+                "operationId": "post_advanced_upload",
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "remark": {
+                                        "type": "string",
+                                        "description": "备注",
+                                        "maxLength": 64,
+                                        "default": ""
+                                    },
+                                    "file": {
+                                        "type": "string",
+                                        "format": "binary",
+                                        "description": "待上传的文件",
+                                        "contentMediaType": "image/*"
+                                    }
+                                },
+                                "required": [
+                                    "file"
+                                ]
+                            },
+                            "encoding": {
+                                "file": {
+                                    "contentType": "image/*"
+                                }
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "成功",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "code": {
+                                            "type": "integer",
+                                            "description": "业务状态码，0 表示成功"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "description": "提示信息"
+                                        },
+                                        "data": {
+                                            "type": "null",
+                                            "description": "业务数据"
+                                        }
+                                    },
+                                    "required": [
+                                        "code",
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/BadRequest"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/UnprocessableEntity"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/InternalServerError"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "x-apifox-name": "上传附件",
+                "x-apifox-folder": "示例/进阶"
+            }
+        },
+        "/fixture/create": {
+            "post": {
+                "tags": [
+                    "示例"
+                ],
+                "summary": "创建条目",
+                "operationId": "post_fixture_create",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/FixtureCreateDTO"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "成功",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "code": {
+                                            "type": "integer",
+                                            "description": "业务状态码，0 表示成功"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "description": "提示信息"
+                                        },
+                                        "data": {
+                                            "type": "null",
+                                            "description": "业务数据"
+                                        }
+                                    },
+                                    "required": [
+                                        "code",
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/BadRequest"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/UnprocessableEntity"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/InternalServerError"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "x-apifox-name": "创建条目",
+                "x-apifox-folder": "示例/条目"
+            }
+        },
+        "/fixture/get_list": {
+            "get": {
+                "tags": [
+                    "示例"
+                ],
+                "summary": "查询条目列表",
+                "operationId": "get_fixture_get_list",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "description": "页码",
+                            "minimum": 1,
+                            "default": 1
+                        }
+                    },
+                    {
+                        "name": "keyword",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "description": "关键词",
+                            "maxLength": 32,
+                            "default": ""
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "code": {
+                                            "type": "integer",
+                                            "description": "业务状态码，0 表示成功"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "description": "提示信息"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/FixtureItemDTO",
+                                            "description": "业务数据"
+                                        }
+                                    },
+                                    "required": [
+                                        "code",
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/BadRequest"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/UnprocessableEntity"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/InternalServerError"
+                    }
+                },
+                "x-apifox-name": "查询条目列表",
+                "x-apifox-folder": "示例/条目"
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "FixtureCreateDTO": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "名称",
+                        "minLength": 1,
+                        "maxLength": 32,
+                        "default": ""
+                    }
+                }
+            },
+            "FixtureItemDTO": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "description": "条目 ID",
+                        "pattern": "^-?\\d+$",
+                        "default": 0
+                    },
+                    "name": {
+                        "type": "string",
+                        "description": "名称",
+                        "default": ""
+                    }
+                }
+            },
+            "PaginationResultDTO_list_FixtureItemDTO": {
+                "type": "object",
+                "properties": {
+                    "list": {
+                        "type": "array",
+                        "description": "数据列表",
+                        "items": {
+                            "$ref": "#/components/schemas/FixtureItemDTO"
+                        }
+                    },
+                    "total": {
+                        "type": "integer",
+                        "description": "数据总数"
+                    }
+                },
+                "required": [
+                    "list",
+                    "total"
+                ]
+            }
+        },
+        "responses": {
+            "BadRequest": {
+                "description": "10000=业务处理失败；10001=请求参数错误",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "code": {
+                                    "type": "integer",
+                                    "description": "业务错误码",
+                                    "enum": [
+                                        10000,
+                                        10001
+                                    ],
+                                    "x-enum-descriptions": [
+                                        "业务处理失败",
+                                        "请求参数错误"
+                                    ],
+                                    "x-enum-varnames": [
+                                        "BUSINESS_ERROR",
+                                        "INVALID_ARGUMENT"
+                                    ]
+                                },
+                                "message": {
+                                    "type": "string",
+                                    "description": "错误说明"
+                                },
+                                "data": {
+                                    "description": "错误诊断数据。无诊断信息时是空数组；部分业务错误会带上定位信息，例如不存在的 ID 列表。",
+                                    "oneOf": [
+                                        {
+                                            "type": "object",
+                                            "description": "带定位信息的诊断数据",
+                                            "additionalProperties": true
+                                        },
+                                        {
+                                            "type": "array",
+                                            "description": "无诊断信息",
+                                            "items": {},
+                                            "maxItems": 0
+                                        }
+                                    ]
+                                }
+                            },
+                            "required": [
+                                "code",
+                                "message",
+                                "data"
+                            ]
+                        }
+                    }
+                }
+            },
+            "Unauthorized": {
+                "description": "10003=未登录或登录已失效",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "code": {
+                                    "type": "integer",
+                                    "description": "业务错误码",
+                                    "enum": [
+                                        10003
+                                    ],
+                                    "x-enum-descriptions": [
+                                        "未登录或登录已失效"
+                                    ],
+                                    "x-enum-varnames": [
+                                        "UNAUTHENTICATED"
+                                    ]
+                                },
+                                "message": {
+                                    "type": "string",
+                                    "description": "错误说明"
+                                },
+                                "data": {
+                                    "description": "错误诊断数据。无诊断信息时是空数组；部分业务错误会带上定位信息，例如不存在的 ID 列表。",
+                                    "oneOf": [
+                                        {
+                                            "type": "object",
+                                            "description": "带定位信息的诊断数据",
+                                            "additionalProperties": true
+                                        },
+                                        {
+                                            "type": "array",
+                                            "description": "无诊断信息",
+                                            "items": {},
+                                            "maxItems": 0
+                                        }
+                                    ]
+                                }
+                            },
+                            "required": [
+                                "code",
+                                "message",
+                                "data"
+                            ]
+                        }
+                    }
+                }
+            },
+            "NotFound": {
+                "description": "10005=资源不存在",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "code": {
+                                    "type": "integer",
+                                    "description": "业务错误码",
+                                    "enum": [
+                                        10005
+                                    ],
+                                    "x-enum-descriptions": [
+                                        "资源不存在"
+                                    ],
+                                    "x-enum-varnames": [
+                                        "RESOURCE_NOT_FOUND"
+                                    ]
+                                },
+                                "message": {
+                                    "type": "string",
+                                    "description": "错误说明"
+                                },
+                                "data": {
+                                    "description": "错误诊断数据。无诊断信息时是空数组；部分业务错误会带上定位信息，例如不存在的 ID 列表。",
+                                    "oneOf": [
+                                        {
+                                            "type": "object",
+                                            "description": "带定位信息的诊断数据",
+                                            "additionalProperties": true
+                                        },
+                                        {
+                                            "type": "array",
+                                            "description": "无诊断信息",
+                                            "items": {},
+                                            "maxItems": 0
+                                        }
+                                    ]
+                                }
+                            },
+                            "required": [
+                                "code",
+                                "message",
+                                "data"
+                            ]
+                        }
+                    }
+                }
+            },
+            "Conflict": {
+                "description": "10006=资源状态冲突",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "code": {
+                                    "type": "integer",
+                                    "description": "业务错误码",
+                                    "enum": [
+                                        10006
+                                    ],
+                                    "x-enum-descriptions": [
+                                        "资源状态冲突"
+                                    ],
+                                    "x-enum-varnames": [
+                                        "RESOURCE_CONFLICT"
+                                    ]
+                                },
+                                "message": {
+                                    "type": "string",
+                                    "description": "错误说明"
+                                },
+                                "data": {
+                                    "description": "错误诊断数据。无诊断信息时是空数组；部分业务错误会带上定位信息，例如不存在的 ID 列表。",
+                                    "oneOf": [
+                                        {
+                                            "type": "object",
+                                            "description": "带定位信息的诊断数据",
+                                            "additionalProperties": true
+                                        },
+                                        {
+                                            "type": "array",
+                                            "description": "无诊断信息",
+                                            "items": {},
+                                            "maxItems": 0
+                                        }
+                                    ]
+                                }
+                            },
+                            "required": [
+                                "code",
+                                "message",
+                                "data"
+                            ]
+                        }
+                    }
+                }
+            },
+            "UnprocessableEntity": {
+                "description": "10002=请求参数验证失败",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "code": {
+                                    "type": "integer",
+                                    "description": "业务错误码",
+                                    "enum": [
+                                        10002
+                                    ],
+                                    "x-enum-descriptions": [
+                                        "请求参数验证失败"
+                                    ],
+                                    "x-enum-varnames": [
+                                        "VALIDATION_FAILED"
+                                    ]
+                                },
+                                "message": {
+                                    "type": "string",
+                                    "description": "错误说明"
+                                },
+                                "data": {
+                                    "type": "object",
+                                    "properties": {
+                                        "errors": {
+                                            "type": "object",
+                                            "description": "字段级校验错误，键为字段名，值为错误消息列表",
+                                            "additionalProperties": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "string"
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "errors"
+                                    ]
+                                }
+                            },
+                            "required": [
+                                "code",
+                                "message",
+                                "data"
+                            ]
+                        }
+                    }
+                }
+            },
+            "TooManyRequests": {
+                "description": "10007=请求过于频繁",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "code": {
+                                    "type": "integer",
+                                    "description": "业务错误码",
+                                    "enum": [
+                                        10007
+                                    ],
+                                    "x-enum-descriptions": [
+                                        "请求过于频繁"
+                                    ],
+                                    "x-enum-varnames": [
+                                        "TOO_MANY_REQUESTS"
+                                    ]
+                                },
+                                "message": {
+                                    "type": "string",
+                                    "description": "错误说明"
+                                },
+                                "data": {
+                                    "description": "错误诊断数据。无诊断信息时是空数组；部分业务错误会带上定位信息，例如不存在的 ID 列表。",
+                                    "oneOf": [
+                                        {
+                                            "type": "object",
+                                            "description": "带定位信息的诊断数据",
+                                            "additionalProperties": true
+                                        },
+                                        {
+                                            "type": "array",
+                                            "description": "无诊断信息",
+                                            "items": {},
+                                            "maxItems": 0
+                                        }
+                                    ]
+                                }
+                            },
+                            "required": [
+                                "code",
+                                "message",
+                                "data"
+                            ]
+                        }
+                    }
+                }
+            },
+            "InternalServerError": {
+                "description": "50000=系统内部错误",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "code": {
+                                    "type": "integer",
+                                    "description": "业务错误码",
+                                    "enum": [
+                                        50000
+                                    ],
+                                    "x-enum-descriptions": [
+                                        "系统内部错误"
+                                    ],
+                                    "x-enum-varnames": [
+                                        "INTERNAL_ERROR"
+                                    ]
+                                },
+                                "message": {
+                                    "type": "string",
+                                    "description": "错误说明"
+                                },
+                                "data": {
+                                    "description": "错误诊断数据。无诊断信息时是空数组；部分业务错误会带上定位信息，例如不存在的 ID 列表。",
+                                    "oneOf": [
+                                        {
+                                            "type": "object",
+                                            "description": "带定位信息的诊断数据",
+                                            "additionalProperties": true
+                                        },
+                                        {
+                                            "type": "array",
+                                            "description": "无诊断信息",
+                                            "items": {},
+                                            "maxItems": 0
+                                        }
+                                    ]
+                                }
+                            },
+                            "required": [
+                                "code",
+                                "message",
+                                "data"
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "description": "登录后获得的访问令牌，放在 Authorization 请求头，格式为 Bearer <token>。",
+                "scheme": "bearer",
+                "bearerFormat": "at_<64 位十六进制>"
+            }
+        }
+    }
+}

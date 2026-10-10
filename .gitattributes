@@ -1,0 +1,17 @@
+# 统一仓库内换行符为 LF，避免在 Windows 上检出后把 CRLF 带进提交。
+* text=auto eol=lf
+
+# 以下文件不随 dist 包分发（GitHub 归档与 Packagist 的 zipball 都尊重 export-ignore）。
+# 目的：元包 hyperf-apex/apex 的 dist 只保留 composer.json 与 LICENSE，
+# 源码一律通过 5 个拆分仓（hyperf-apex/core 等）分发，避免消费者下载两份代码。
+/.github              export-ignore
+/.githooks            export-ignore
+/.vscode              export-ignore
+/.codebuddy           export-ignore
+/packages             export-ignore
+/test                 export-ignore
+/AGENTS.md            export-ignore
+/phpstan-bootstrap.php export-ignore
+/phpstan.neon.dist    export-ignore
+/phpunit.xml.dist     export-ignore
+/.php-cs-fixer.php    export-ignore

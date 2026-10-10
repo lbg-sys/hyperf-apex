@@ -1,0 +1,101 @@
+name: Split
+
+# 打版本 tag 时，把 5 个子包推送到各自的只读仓，Packagist 从只读仓索引版本。
+#
+# 为什么必须拆：Composer 的 VCS 仓库只读「仓库根」的 composer.json，Packagist 一个仓库也只能提供
+# 一个包名。消费者要能 `composer require hyperf-apex/core`，就必须有一个以 packages/core 为根、
+# 带同名 composer.json 的仓库。
+#
+# 元包 hyperf-apex/apex 不参与拆分：它的包名与本源仓库一致，直接由 lbg-sys/hyperf-apex 发布即可
+# （`.gitattributes` 已把 packages/、test/ 等标记 export-ignore，dist 包只留 composer.json 与 LICENSE）。
+#
+# 前置条件：仓库 Secrets 中配置 SPLIT_TOKEN，需对 5 个只读仓有 contents: write 权限
+# （细粒度 PAT 勾选 5 个仓的 Contents: Read and write；经典 PAT 用 repo scope）。
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 要拆分的 tag（例如 v1.0.0），必须是本仓库已存在的 tag
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  split:
+    name: 推送 ${{ matrix.package }} 只读仓
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        package:
+          - core
+          - apidoc
+          - websocket
+          - reliability
+          - metrics
+    steps:
+      # subtree split 要遍历完整历史，默认的浅克隆会算出错误结果。
+      - name: 检出代码
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 校验 tag 并计算目标仓
+        id: ref
+        env:
+          DISPATCH_TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          tag="${DISPATCH_TAG:-${GITHUB_REF_NAME}}"
+
+          # tag 只增不改，格式必须与 packages/*/composer.json 里 branch-alias 的 1.x 线一致。
+          if ! printf '%s' "$tag" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+              echo "tag 不符合 vX.Y.Z 语义化格式：$tag" >&2
+              exit 1
+          fi
+
+          git rev-parse --verify "refs/tags/${tag}" >/dev/null
+
+          {
+              echo "tag=${tag}"
+              echo "repository=hyperf-apex-${{ matrix.package }}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: 拆分并推送
+        env:
+          SPLIT_TOKEN: ${{ secrets.SPLIT_TOKEN }}
+          TAG: ${{ steps.ref.outputs.tag }}
+          TARGET_REPOSITORY: ${{ steps.ref.outputs.repository }}
+        run: |
+          set -euo pipefail
+
+          remote="https://x-access-token:${SPLIT_TOKEN}@github.com/lbg-sys/${TARGET_REPOSITORY}.git"
+          branch="split/${{ matrix.package }}"
+
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git remote add split "${remote}"
+
+          # 主仓根的 LICENSE 在切换到拆分分支后就不在工作区里了，先存起来。
+          cp LICENSE /tmp/apex-LICENSE
+
+          # 只取该子目录的历史，得到「以包目录为根」的一棵独立历史。
+          git subtree split --prefix="packages/${{ matrix.package }}" --branch="${branch}"
+          git checkout "${branch}"
+
+          # 拆分仓没有根 LICENSE，补上：dist 包缺授权文件会让 Packagist 页面显示无许可。
+          cp /tmp/apex-LICENSE LICENSE
+          git add LICENSE
+          git commit -m "chore(release): ${TAG} 附带 LICENSE"
+
+          # tag 指到带 LICENSE 的这次提交，Packagist 按 tag 生成版本与 dist 包。
+          git tag -f "${TAG}"
+
+          # 只读仓会被反复覆写（每次 tag 都重建一份历史），因此这里必须 force。
+          git push --force split "${branch}:master"
+          git push --force split "refs/tags/${TAG}"

@@ -1,0 +1,51 @@
+#!/bin/sh
+#
+# pre-push：推送 master / test 之前跑质检门禁。
+#
+# 启用（一次性）：git config core.hooksPath .githooks
+# 确需跳过：SKIP_GIT_CHECKS=1 git push ...，并在提交或合并说明里写明原因。
+#
+# 门禁的判据与 AGENTS.md 一致：代码风格、静态分析、单元测试。
+# 风格那一项用 --dry-run 而不是 cs-fix：门禁只做检查，
+# 不能在推送过程中回头改工作区文件（那会让「推上去的」和「本地看到的」不是同一份）。
+
+if [ "${SKIP_GIT_CHECKS:-0}" = "1" ]; then
+    echo '[pre-push] SKIP_GIT_CHECKS=1，跳过质检门禁。' >&2
+    exit 0
+fi
+
+protected_ref=''
+while read -r local_ref local_sha remote_ref remote_sha; do
+    case "$remote_ref" in
+        refs/heads/master | refs/heads/test)
+            protected_ref=$remote_ref
+            ;;
+    esac
+done
+
+# 推的不是受保护分支就不拦，功能分支上允许自由提交。
+if [ -z "$protected_ref" ]; then
+    exit 0
+fi
+
+# 本机用 composer62 / swoole62（PHP 8.4 + Swoole 6.2，见 AGENTS.md），没有时退回默认命令。
+if command -v composer62 >/dev/null 2>&1; then
+    composer_bin=composer62
+else
+    composer_bin=composer
+fi
+
+if command -v swoole62 >/dev/null 2>&1; then
+    php_bin=swoole62
+else
+    php_bin=php
+fi
+
+echo "[pre-push] 推送 $protected_ref，执行质检门禁……" >&2
+
+"$php_bin" vendor/bin/php-cs-fixer fix --dry-run --diff || exit 1
+"$composer_bin" analyse || exit 1
+"$composer_bin" test || exit 1
+
+echo '[pre-push] 质检门禁通过。' >&2
+exit 0

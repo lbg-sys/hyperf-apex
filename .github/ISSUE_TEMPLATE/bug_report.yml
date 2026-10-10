@@ -1,0 +1,61 @@
+name: Bug 反馈
+description: 报告组件的行为异常
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        安全漏洞请勿在此提交，请走 [SECURITY.md](../../SECURITY.md) 里的私下渠道。
+  - type: input
+    id: package
+    attributes:
+      label: 受影响的包
+      placeholder: hyperf-apex/core（或 apidoc / websocket / reliability / metrics）
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: 版本
+      placeholder: v1.0.0（或 dev-master 的具体 commit）
+    validations:
+      required: true
+  - type: textarea
+    id: env
+    attributes:
+      label: 运行环境
+      value: |
+        - PHP：
+        - Swoole：
+        - Hyperf：
+      render: markdown
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期望行为
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: 实际行为
+      description: 有异常栈就贴完整栈；涉及接口契约时贴出 OpenAPI 片段。
+      render: markdown
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: 复现步骤
+      description: 最好给出最小复现（相关 DTO、控制器签名、依赖注入配置）。
+    validations:
+      required: true
+  - type: textarea
+    id: extra
+    attributes:
+      label: 补充信息
+    validations:
+      required: false

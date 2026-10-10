@@ -1,0 +1,43 @@
+#!/bin/sh
+#
+# commit-msg：强制 Conventional Commits。
+#
+# 启用（一次性）：git config core.hooksPath .githooks
+# 确需跳过：SKIP_GIT_CHECKS=1 git commit ...，并在提交说明里写明原因。
+#
+# 只校验首行主题行。正文格式不在这里管 —— 正文是给人读的，机器判不出好坏。
+
+if [ "${SKIP_GIT_CHECKS:-0}" = "1" ]; then
+    echo '[commit-msg] SKIP_GIT_CHECKS=1，跳过提交信息校验。' >&2
+    exit 0
+fi
+
+message_file=$1
+subject=$(head -n 1 "$message_file")
+
+# 合并与 revert 由工具生成，不受本规则约束。
+case "$subject" in
+    'Merge '* | 'Revert '* | 'fixup! '* | 'squash! '*)
+        exit 0
+        ;;
+esac
+
+# type 取值见 AGENTS.md 的「Git 协作与提交规范」。
+pattern='^(feat|fix|refactor|chore|docs|test|perf|revert)(\([a-z0-9._/-]+\))?!?: .+'
+if printf '%s' "$subject" | grep -Eq "$pattern"; then
+    exit 0
+fi
+
+cat >&2 <<EOF
+提交信息不符合 Conventional Commits：
+
+    $subject
+
+要求：<type>(<scope>): <subject>
+  type 取 feat / fix / refactor / chore / docs / test / perf / revert
+  主题行说明「做了什么」，正文空行分隔后说明「为什么」
+
+例：fix(idempotency): 接管后旧执行者不再覆盖新结果
+EOF
+
+exit 1

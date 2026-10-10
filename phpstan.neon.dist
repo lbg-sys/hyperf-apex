@@ -1,0 +1,22 @@
+parameters:
+  scanFiles:
+    - vendor/swoole/ide-helper/src/swoole/Swoole/Coroutine.php
+  level: 6
+  paths:
+    - ./packages
+  bootstrapFiles:
+    - phpstan-bootstrap.php
+  reportUnmatchedIgnoredErrors: false
+  ignoreErrors:
+    - '#Static call to instance method Hyperf\\HttpServer\\Router\\Router::[a-zA-Z0-9\\_]+\(\)#'
+    - '#Static call to instance method Hyperf\\DbConnection\\Db::[a-zA-Z0-9\\_]+\(\)#'
+    - '#Call to an undefined method Hyperf\\Database\\Model\\Builder[^:]*::(withTrashed|withoutTrashed|onlyTrashed)\(\)#'
+    - '#Call to an undefined method Hyperf\\Database\\Schema\\ColumnDefinition::useCurrentOnUpdate\(\)#'
+    - '#Call to an undefined method Hyperf\\Contract\\TranslatorInterface::get\(\)#'
+    - '#has invalid type Swow\\Psr7\\Server\\ServerConnection#'
+    - identifier: trait.unused
+    # 常驻消费进程的外层循环本来就是无限循环：退出由 Swoole 在收到停止信号时结束，
+    # 写不出一个有意义的条件。按文件收窄，不要让它顺带放过别处真写错的循环。
+    -
+        message: '#While loop condition is always true#'
+        path: packages/reliability/src/Outbox/Process/OutboxConsumeProcess.php

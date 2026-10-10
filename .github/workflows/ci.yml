@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [master, test]
+  pull_request:
+    branches: [master, test]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: 质检（PHP 8.4 + Swoole 6.2）
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      # 本仓库要求 PHP >= 8.4 与 Swoole 6.2（见 AGENTS.md）。
+      # 首次接入时请确认 runner 确实装得到这一组合：装不到就换成与生产一致的容器镜像
+      # （例如 phpswoole/swoole 的对应 tag），不要把版本要求放宽来迁就 runner ——
+      # 在错误版本上跑绿的门禁，比没有门禁更危险。
+      - name: 安装 PHP 与 Swoole
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: swoole-6.2.0
+          tools: composer:v2
+          coverage: none
+
+      - name: 打印运行环境
+        run: |
+          php -v
+          php --ri swoole | head -5
+
+      - name: 安装依赖
+        run: composer install --prefer-dist --no-progress --no-interaction
+
+      # 与 .githooks/pre-push 同一套判据：风格检查用 --dry-run（CI 不允许改文件）。
+      - name: 代码风格检查
+        run: vendor/bin/php-cs-fixer fix --dry-run --diff
+
+      - name: 静态分析
+        run: composer analyse
+
+      - name: 单元测试
+        run: composer test

@@ -1,0 +1,65 @@
+{
+    "name": "hyperf-apex/core",
+    "description": "Apex generic infrastructure foundation, HTTP engine and security for Hyperf",
+    "type": "library",
+    "license": "Apache-2.0",
+    "keywords": [
+        "hyperf",
+        "swoole",
+        "apex",
+        "dto",
+        "validation"
+    ],
+    "homepage": "https://github.com/lbg-sys/hyperf-apex-core",
+    "support": {
+        "issues": "https://github.com/lbg-sys/hyperf-apex-core/issues",
+        "source": "https://github.com/lbg-sys/hyperf-apex-core"
+    },
+    "authors": [
+        {
+            "name": "lbg-sys",
+            "homepage": "https://github.com/lbg-sys"
+        }
+    ],
+    "require": {
+        "php": ">=8.4",
+        "hyperf/command": "~3.2.0",
+        "hyperf/config": "~3.2.0",
+        "hyperf/constants": "~3.2.0",
+        "hyperf/context": "~3.2.0",
+        "hyperf/coordinator": "~3.2.0",
+        "hyperf/database": "~3.2.0",
+        "hyperf/db-connection": "~3.2.0",
+        "hyperf/di": "~3.2.0",
+        "hyperf/event": "~3.2.0",
+        "hyperf/exception-handler": "~3.2.0",
+        "hyperf/framework": "~3.2.0",
+        "hyperf/http-server": "~3.2.0",
+        "hyperf/logger": "~3.2.0",
+        "hyperf/paginator": "^3.2",
+        "hyperf/process": "~3.2.0",
+        "hyperf/validation": "^3.2",
+        "monolog/monolog": "^3.0",
+        "nesbot/carbon": "^3.0",
+        "psr/container": "^1.0 || ^2.0",
+        "psr/http-message": "^1.0 || ^2.0",
+        "psr/http-server-handler": "^1.0",
+        "psr/http-server-middleware": "^1.0",
+        "psr/log": "^1.0 || ^2.0 || ^3.0",
+        "swow/psr7-plus": "^1.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "Hyperf\\Apex\\": "src/"
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "1.0.x-dev",
+            "dev-main": "1.0.x-dev"
+        },
+        "hyperf": {
+            "config": "Hyperf\\Apex\\ConfigProvider"
+        }
+    }
+}

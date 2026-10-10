@@ -1,0 +1,40 @@
+name: 功能建议
+description: 建议新增或调整组件能力
+labels:
+  - enhancement
+body:
+  - type: dropdown
+    id: package
+    attributes:
+      label: 相关包
+      options:
+        - hyperf-apex/core
+        - hyperf-apex/apidoc
+        - hyperf-apex/websocket
+        - hyperf-apex/reliability
+        - hyperf-apex/metrics
+        - 跨包 / 元包
+        - 不确定
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: 要解决的场景
+      description: 先描述现状哪里别扭，不必先给方案。
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 期望的方案
+      description: 涉及公开 API 时，请贴出期望的调用侧代码。
+      render: php
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: 考虑过的替代方案
+    validations:
+      required: false

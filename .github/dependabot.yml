@@ -1,0 +1,42 @@
+version: 2
+
+updates:
+  # Composer 依赖：合并前必须过 CI 门禁（cs-fix --dry-run / analyse / test）。
+  - package-ecosystem: composer
+    directory: /
+    target-branch: master
+    schedule:
+      interval: weekly
+      day: monday
+      time: '02:00'
+      timezone: Asia/Shanghai
+    open-pull-requests-limit: 5
+    versioning-strategy: increase
+    commit-message:
+      prefix: chore
+      include: scope
+    groups:
+      hyperf:
+        patterns:
+          - hyperf/*
+        update-types:
+          - minor
+          - patch
+      dev-tools:
+        dependency-type: development
+        update-types:
+          - minor
+          - patch
+
+  # Actions 版本：pin 到 tag 的引用只在 Dependabot 里维护，避免手工漏更新。
+  - package-ecosystem: github-actions
+    directory: /
+    target-branch: master
+    schedule:
+      interval: weekly
+      day: monday
+      time: '02:00'
+      timezone: Asia/Shanghai
+    commit-message:
+      prefix: chore
+      include: scope

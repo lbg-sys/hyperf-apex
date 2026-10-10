@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 安全问题
+    url: https://github.com/lbg-sys/hyperf-apex/security/advisories/new
+    about: 请勿用公开 Issue 报告漏洞，走 SECURITY.md 里的私下渠道。
+  - name: 项目规范（AGENTS.md）
+    url: https://github.com/lbg-sys/hyperf-apex/blob/master/AGENTS.md
+    about: 提交 Issue 或 PR 前，请先阅读仓库的完整项目规范。
