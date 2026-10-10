@@ -19,7 +19,7 @@
 | **`hyperf-apex/apidoc`** | `packages/apidoc` | **OpenAPI 契约引擎**（基于 DTO 反射的无侵入 OpenAPI 3.1 生成） | `swagger-php`、`symfony/yaml` |
 | **`hyperf-apex/apidoc-apifox`** | `packages/apidoc-apifox` | **长连接契约导出**（把 `#[WsGateway]` / `#[WsRoute]` 声明渲染成 Apifox 原生 `webSocketCollection`） | `hyperf-apex/apidoc`、`hyperf-apex/websocket` |
 | **`hyperf-apex/websocket`**| `packages/websocket`| **长连接网关**（多端 WebSocket 协议封装、跨 Worker 会话存储、Swoole Table 连接表） | `hyperf/websocket-server` |
-| **`hyperf-apex/reliability`**| `packages/reliability`| **高可用套件**（Redis 分布式限流、接口幂等执行防重、事务发件箱 Outbox、企微多渠道通知、出站 HTTP 客户端） | `hyperf/redis`、`hyperf/database`、`hyperf/guzzle` |
+| **`hyperf-apex/reliability`**| `packages/reliability`| **高可用套件**（Redis 分布式限流与限流中间件、接口幂等防重与幂等中间件、事务发件箱 Outbox、企微多渠道通知、出站 HTTP 客户端） | `hyperf/redis`、`hyperf/database`、`hyperf/guzzle` |
 | **`hyperf-apex/metrics`** | `packages/metrics` | **Prometheus 监控**（基于 Swoole Table 共享内存的低基数运行指标、请求耗时拦截与大屏） | `hyperf/memory`（Swoole Table） |
 | **`hyperf-apex/apex`** | 根目录元包 | **全家桶元包（Metapackage）**（聚合依赖上述全部 6 个独立包，开箱即用） | 聚合所有子包 |
 

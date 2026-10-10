@@ -14,7 +14,6 @@ use Hyperf\Apex\DTO\Attribute\Minimum;
 use Hyperf\Apex\Http\ArgumentResolver\Attribute\FromBody;
 use Hyperf\Apex\Http\ArgumentResolver\Attribute\FromMultipart;
 use Hyperf\Apex\Http\ArgumentResolver\Attribute\FromQuery;
-use Hyperf\Apex\Http\Middleware\IdempotencyMiddleware;
 use Hyperf\Apex\Idempotency\Attribute\Idempotent;
 use OpenApi\Spec as OA;
 use PHPUnit\Framework\TestCase;
@@ -52,7 +51,7 @@ final class RequestBuilderTest extends TestCase
     public function testIdempotentAddsTheKeyHeaderWhenIdIsNotInTheBody(): void
     {
         // 类级 #[ApiHeader] 对每个方法都生效，所以这里只挑幂等头出来断言。
-        $header = $this->header(IdempotencyMiddleware::HEADER, 'withIdempotent');
+        $header = $this->header(Idempotent::HEADER, 'withIdempotent');
 
         $this->assertTrue($header->required);
         $this->assertSame(8, $header->schema->minLength);
@@ -63,7 +62,7 @@ final class RequestBuilderTest extends TestCase
     {
         // 请求 ID 由请求体字段承载时不该再要求一个头，否则同一件事有两个入口。
         $this->assertNotContains(
-            IdempotencyMiddleware::HEADER,
+            Idempotent::HEADER,
             array_map(static fn (OA\Parameter $p): string => (string) $p->name, $this->headers('withIdempotentFromBody')),
         );
     }

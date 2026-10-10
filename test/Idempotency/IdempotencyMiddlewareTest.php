@@ -9,7 +9,6 @@ use FastRoute\Dispatcher;
 use Hyperf\Apex\Enum\ErrorCode;
 use Hyperf\Apex\Exception\BusinessException;
 use Hyperf\Apex\Http\HandlerMethodResolver;
-use Hyperf\Apex\Http\Middleware\IdempotencyMiddleware;
 use Hyperf\Apex\Http\Response\ApiResponseDTO;
 use Hyperf\Apex\Http\Response\ApiResponseFactory;
 use Hyperf\Apex\Http\Response\ResponseEncoderResolver;
@@ -17,6 +16,7 @@ use Hyperf\Apex\Idempotency\Attribute\Idempotent;
 use Hyperf\Apex\Idempotency\IdempotencyCallerResolver;
 use Hyperf\Apex\Idempotency\IdempotencyRequestHasher;
 use Hyperf\Apex\Idempotency\IdempotencyService;
+use Hyperf\Apex\Idempotency\Middleware\IdempotencyMiddleware;
 use Hyperf\Apex\Security\Principal;
 use Hyperf\Apex\Test\ApiDoc\Support\JsonEncoderContainer;
 use Hyperf\Apex\Test\Idempotency\Support\FakePrincipalContext;
@@ -57,7 +57,7 @@ final class IdempotencyMiddlewareTest extends TestCase
         $response = $this->middleware(new InMemoryIdempotencyRecordRepository())
             ->process($this->request('POST', null), $this->handler());
 
-        $this->assertFalse($response->hasHeader(IdempotencyMiddleware::HEADER));
+        $this->assertFalse($response->hasHeader(Idempotent::HEADER));
     }
 
     public function testMethodWithoutDeclarationPassesThrough(): void
@@ -65,7 +65,7 @@ final class IdempotencyMiddlewareTest extends TestCase
         $response = $this->middleware(new InMemoryIdempotencyRecordRepository())
             ->process($this->request('POST', $this->dispatched('plain')), $this->handler());
 
-        $this->assertFalse($response->hasHeader(IdempotencyMiddleware::HEADER));
+        $this->assertFalse($response->hasHeader(Idempotent::HEADER));
     }
 
     public function testNonPostIsRejected(): void
@@ -82,7 +82,7 @@ final class IdempotencyMiddlewareTest extends TestCase
     {
         try {
             $this->middleware(new InMemoryIdempotencyRecordRepository())->process(
-                $this->request('POST', $this->dispatched('create'), [IdempotencyMiddleware::HEADER => 'bad']),
+                $this->request('POST', $this->dispatched('create'), [Idempotent::HEADER => 'bad']),
                 $this->handler(),
             );
             $this->fail('不合法的请求 ID 应当被拒绝。');
@@ -96,12 +96,12 @@ final class IdempotencyMiddlewareTest extends TestCase
     {
         $counter = new ArrayObject(['calls' => 0]);
         $response = $this->middleware(new InMemoryIdempotencyRecordRepository())->process(
-            $this->request('POST', $this->dispatched('create'), [IdempotencyMiddleware::HEADER => 'req-12345678']),
+            $this->request('POST', $this->dispatched('create'), [Idempotent::HEADER => 'req-12345678']),
             $this->handler($counter),
         );
 
         $this->assertSame(1, $counter['calls']);
-        $this->assertSame('req-12345678', $response->getHeaderLine(IdempotencyMiddleware::HEADER));
+        $this->assertSame('req-12345678', $response->getHeaderLine(Idempotent::HEADER));
         $this->assertSame('false', $response->getHeaderLine('Idempotency-Replayed'));
     }
 
@@ -109,7 +109,7 @@ final class IdempotencyMiddlewareTest extends TestCase
     {
         $repository = new InMemoryIdempotencyRecordRepository();
         $middleware = $this->middleware($repository);
-        $request = $this->request('POST', $this->dispatched('create'), [IdempotencyMiddleware::HEADER => 'req-12345678']);
+        $request = $this->request('POST', $this->dispatched('create'), [Idempotent::HEADER => 'req-12345678']);
 
         $first = $middleware->process($request, $this->handler());
 
@@ -129,7 +129,7 @@ final class IdempotencyMiddlewareTest extends TestCase
             $this->handler(),
         );
 
-        $this->assertSame('req-12345678', $response->getHeaderLine(IdempotencyMiddleware::HEADER));
+        $this->assertSame('req-12345678', $response->getHeaderLine(Idempotent::HEADER));
         $this->assertSame('false', $response->getHeaderLine('Idempotency-Replayed'));
     }
 
@@ -149,7 +149,7 @@ final class IdempotencyMiddlewareTest extends TestCase
     public function testBusinessExceptionIsStoredAndRethrown(): void
     {
         $middleware = $this->middleware(new InMemoryIdempotencyRecordRepository());
-        $request = $this->request('POST', $this->dispatched('create'), [IdempotencyMiddleware::HEADER => 'req-12345678']);
+        $request = $this->request('POST', $this->dispatched('create'), [Idempotent::HEADER => 'req-12345678']);
 
         $throwing = new class implements RequestHandlerInterface {
             public function handle(ServerRequestInterface $request): ResponseInterface

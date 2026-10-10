@@ -5,6 +5,18 @@
 
 ## [Unreleased]
 
+### 破坏性变更
+
+- 限流与幂等中间件从 `hyperf-apex/core` 迁到 `hyperf-apex/reliability`，应用侧需同步
+  `config/autoload/middlewares.php` 中的类名：
+  - `Hyperf\Apex\Http\Middleware\RateLimitMiddleware` → `Hyperf\Apex\RateLimit\Middleware\RateLimitMiddleware`；
+  - `Hyperf\Apex\Http\Middleware\IdempotencyMiddleware` → `Hyperf\Apex\Idempotency\Middleware\IdempotencyMiddleware`；
+  - `IdempotencyMiddleware::HEADER` → `Idempotent::HEADER`（常量搬到契约类，取值仍是 `Idempotency-Key`）。
+- 原因：这两个中间件直接使用 `RateLimiter`、`IdempotencyService` 等 reliability 运行时类，而
+  `hyperf-apex/core` 按依赖方向约定不得依赖其它 Apex 包（依赖 reliability 会与后者成环）。此前 core 既未声明
+  该依赖也未迁出实现，独立安装 `hyperf-apex/core` 的工程一旦启用这两个中间件就会「Class not found」；
+  迁走后 core 对 reliability 再无任何引用。本次含破坏性变更，应随 `2.0.0` 发布。
+
 ### 新增
 
 - 新增 `hyperf-apex/apidoc-apifox`：把 `#[WsGateway]` / `#[WsRoute]` 声明渲染成 Apifox 原生
@@ -29,6 +41,9 @@
   3. 若曾自定义 `api_doc.apifox.folder` / `api_doc.apifox.status` / `api_doc.apifox.tags`，把自定义值
      手工搬进新的 `config/autoload/apifox.php`，再从 `api_doc.php` 中删除 `apifox` 段。
   未做第 3 步时导出会回落到默认值（`WebSocket` / `developing` / `['WebSocket']`）。
+
+- 限流 / 幂等中间件换了命名空间：把 `config/autoload/middlewares.php` 里的旧类名换成新类名
+  （对照见「破坏性变更」），并把用到 `IdempotencyMiddleware::HEADER` 的自有代码改成 `Idempotent::HEADER`。
 
 - 维护者：`SPLIT_TOKEN` 现在需要对 6 个只读仓有写权限（新增 `lbg-sys/hyperf-apex-apidoc-apifox`）。
 

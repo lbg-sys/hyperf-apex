@@ -18,6 +18,14 @@ use Attribute;
 #[Attribute(Attribute::TARGET_METHOD)]
 final readonly class Idempotent
 {
+    /**
+     * 承载请求 ID 的请求头名。
+     *
+     * 放在契约类上而不是中间件上：这是接口的对外线格式，文档生成器、中间件与测试
+     * 都必须读同一份值，放在声明处才只有一个来源。
+     */
+    public const HEADER = 'Idempotency-Key';
+
     public function __construct(
         public ?string $requestIdField = null,
         public ?string $caller = null,

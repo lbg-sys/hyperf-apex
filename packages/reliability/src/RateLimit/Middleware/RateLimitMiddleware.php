@@ -2,13 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Hyperf\Apex\Http\Middleware;
+namespace Hyperf\Apex\RateLimit\Middleware;
 
 use Hyperf\Apex\Enum\ErrorCode;
 use Hyperf\Apex\Exception\BusinessException;
 use Hyperf\Apex\Http\ClientIpResolver;
 use Hyperf\Apex\Http\HandlerMethodResolver;
 use Hyperf\Apex\Http\IpRuleMatcher;
+use Hyperf\Apex\Http\Middleware\AbstractMiddleware;
 use Hyperf\Apex\RateLimit\RateLimiter;
 use Hyperf\Apex\RateLimit\RateLimitIdentityResolverRegistry;
 use Hyperf\Apex\RateLimit\RateLimitResult;

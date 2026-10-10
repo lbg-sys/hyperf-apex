@@ -2,11 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Hyperf\Apex\Http\Middleware;
+namespace Hyperf\Apex\Idempotency\Middleware;
 
 use Hyperf\Apex\Enum\ErrorCode;
 use Hyperf\Apex\Exception\BusinessException;
 use Hyperf\Apex\Http\HandlerMethodResolver;
+use Hyperf\Apex\Http\Middleware\AbstractMiddleware;
 use Hyperf\Apex\Http\Response\ApiResponseFactory;
 use Hyperf\Apex\Http\Response\ResponseEncoderResolver;
 use Hyperf\Apex\Idempotency\Attribute\Idempotent;
@@ -33,8 +34,6 @@ use Throwable;
  */
 final class IdempotencyMiddleware extends AbstractMiddleware
 {
-    public const HEADER = 'Idempotency-Key';
-
     public function __construct(
         private readonly HandlerMethodResolver $handlerMethods,
         private readonly IdempotencyCallerResolver $callers,
@@ -94,14 +93,14 @@ final class IdempotencyMiddleware extends AbstractMiddleware
         );
 
         return $response
-            ->withHeader(self::HEADER, $requestId)
+            ->withHeader(Idempotent::HEADER, $requestId)
             ->withHeader('Idempotency-Replayed', 'false');
     }
 
     private function requestId(ServerRequestInterface $request, Idempotent $declaration): string
     {
         $requestId = $declaration->requestIdField === null
-            ? $request->getHeaderLine(self::HEADER)
+            ? $request->getHeaderLine(Idempotent::HEADER)
             : $this->bodyRequestId($request, $declaration->requestIdField);
         $requestId = trim($requestId);
 
@@ -131,7 +130,7 @@ final class IdempotencyMiddleware extends AbstractMiddleware
             ->withStatus($record->response_status ?? 500)
             ->withBody(new SwooleStream($record->response_body ?? ''))
             ->withHeader('content-type', $record->response_content_type ?? 'application/json')
-            ->withHeader(self::HEADER, $requestId)
+            ->withHeader(Idempotent::HEADER, $requestId)
             ->withHeader('Idempotency-Replayed', 'true');
     }
 
