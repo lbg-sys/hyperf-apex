@@ -15,12 +15,13 @@
 
 | 组件包名 | 目录 | 职责说明 | 外部核心依赖 |
 | :--- | :--- | :--- | :--- |
-| **`hyperf-apex/core`** | `packages/core` | **通用基础底座**（DTO 参数水合、规则校验、统一响应、声明式权限注解、统一异常、日志审计、Fail-Fast 启动检查） | 仅 Hyperf 基础组件，零外设冗余依赖 |
-| **`hyperf-apex/apidoc`** | `packages/apidoc` | **接口契约引擎**（基于 DTO 反射的无侵入 OpenAPI 3.1 生成与 Apifox 格式导出） | `swagger-php`、`symfony/yaml`、`hyperf-apex/websocket`、`hyperf-apex/reliability` |
+| **`hyperf-apex/core`** | `packages/core` | **通用基础底座**（DTO 参数水合、规则校验、统一响应、声明式权限/限流/幂等注解、统一异常、日志审计、Fail-Fast 启动检查） | 仅 Hyperf 基础组件，零外设冗余依赖 |
+| **`hyperf-apex/apidoc`** | `packages/apidoc` | **OpenAPI 契约引擎**（基于 DTO 反射的无侵入 OpenAPI 3.1 生成） | `swagger-php`、`symfony/yaml` |
+| **`hyperf-apex/apidoc-apifox`** | `packages/apidoc-apifox` | **长连接契约导出**（把 `#[WsGateway]` / `#[WsRoute]` 声明渲染成 Apifox 原生 `webSocketCollection`） | `hyperf-apex/apidoc`、`hyperf-apex/websocket` |
 | **`hyperf-apex/websocket`**| `packages/websocket`| **长连接网关**（多端 WebSocket 协议封装、跨 Worker 会话存储、Swoole Table 连接表） | `hyperf/websocket-server` |
 | **`hyperf-apex/reliability`**| `packages/reliability`| **高可用套件**（Redis 分布式限流、接口幂等执行防重、事务发件箱 Outbox、企微多渠道通知、出站 HTTP 客户端） | `hyperf/redis`、`hyperf/database`、`hyperf/guzzle` |
 | **`hyperf-apex/metrics`** | `packages/metrics` | **Prometheus 监控**（基于 Swoole Table 共享内存的低基数运行指标、请求耗时拦截与大屏） | `hyperf/memory`（Swoole Table） |
-| **`hyperf-apex/apex`** | 根目录元包 | **全家桶元包（Metapackage）**（聚合依赖上述全部 5 个独立包，开箱即用） | 聚合所有子包 |
+| **`hyperf-apex/apex`** | 根目录元包 | **全家桶元包（Metapackage）**（聚合依赖上述全部 6 个独立包，开箱即用） | 聚合所有子包 |
 
 ---
 
@@ -43,9 +44,11 @@
 # 纯 HTTP 接口服务 / 微服务（最精简底座，零冗余依赖）
 composer require hyperf-apex/core
 
-# 需要自动生成 OpenAPI / Apifox 接口文档时
-# （会一并引入 websocket 与 reliability：文档要读长连接契约与 #[RateLimit] 声明）
+# 需要自动生成 OpenAPI 接口文档时（只依赖 core，不会牵入 websocket / reliability）
 composer require hyperf-apex/apidoc
+
+# 需要把 WebSocket 契约同步到 Apifox 时（在 apidoc 之上追加，会一并引入 websocket）
+composer require hyperf-apex/apidoc-apifox
 
 # 需要 WebSocket 长连接网关与会话管理时
 composer require hyperf-apex/websocket
@@ -75,6 +78,9 @@ php bin/hyperf.php vendor:publish hyperf-apex/core --id=config
 
 # 发布 ApiDoc 配置
 php bin/hyperf.php vendor:publish hyperf-apex/apidoc --id=config
+
+# 发布 Apifox 长连接契约导出配置（需先 composer require hyperf-apex/apidoc-apifox）
+php bin/hyperf.php vendor:publish hyperf-apex/apidoc-apifox --id=config
 
 # 发布 WebSocket 配置
 php bin/hyperf.php vendor:publish hyperf-apex/websocket --id=config
@@ -106,7 +112,7 @@ php bin/hyperf.php vendor:publish hyperf-apex/metrics --id=config
 
 | Composer 包名 | 发布来源 |
 | :--- | :--- |
-| `hyperf-apex/core`、`apidoc`、`websocket`、`reliability`、`metrics` | 在 `master` 打 `vX.Y.Z` tag 后，由 `.github/workflows/split.yml` 拆分并推送到 `lbg-sys/hyperf-apex-{包名}` 只读仓，Packagist 从只读仓索引版本 |
+| `hyperf-apex/core`、`apidoc`、`apidoc-apifox`、`websocket`、`reliability`、`metrics` | 在 `master` 打 `vX.Y.Z` tag 后，由 `.github/workflows/split.yml` 拆分并推送到 `lbg-sys/hyperf-apex-{包名}` 只读仓，Packagist 从只读仓索引版本 |
 | `hyperf-apex/apex`（元包） | 直接由本仓库 `lbg-sys/hyperf-apex` 发布；`packages/`、`test/` 等已标记 `export-ignore`，dist 包只含 `composer.json` 与 `LICENSE` |
 
 发布流程：更新 `CHANGELOG.md` → 在 `master` 上打 `git tag -a vX.Y.Z -m "chore(release): vX.Y.Z"` → `git push origin vX.Y.Z`。

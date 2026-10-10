@@ -117,7 +117,7 @@ final class ApifoxDocumentBuilderTest extends TestCase
 
         // 配置里留空/写错类型时回落到默认值，而不是产出空字符串。
         $document = $this->builder([
-            'api_doc' => ['apifox' => ['folder' => '', 'status' => 123, 'tags' => ['标签', 42, '']]],
+            'apifox' => ['folder' => '', 'status' => 123, 'tags' => ['标签', 42, '']],
         ])->build();
 
         $this->assertSame('WebSocket', $document['webSocketCollection'][0]['name']);
@@ -149,7 +149,7 @@ final class ApifoxDocumentBuilderTest extends TestCase
         $config = new Config(array_merge([
             'server' => ['servers' => [['name' => 'ws']]],
             'websocket' => ['path' => '/ws', 'excluded' => []],
-            'api_doc' => ['apifox' => ['folder' => 'WebSocket', 'status' => 'developing', 'tags' => ['WebSocket']]],
+            'apifox' => ['folder' => 'WebSocket', 'status' => 'developing', 'tags' => ['WebSocket']],
         ], $config));
 
         return new ApifoxDocumentBuilder(

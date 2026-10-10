@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Hyperf\Apex\Test\ApiDoc;
 
 use Hyperf\Apex\ApiDoc\Apifox\ApifoxDocumentBuilder;
+use Hyperf\Apex\ApiDoc\Apifox\Command\GenerateApifoxDocCommand;
 use Hyperf\Apex\ApiDoc\Apifox\WsEventMarkdownRenderer;
-use Hyperf\Apex\ApiDoc\Command\GenerateApifoxDocCommand;
 use Hyperf\Apex\Test\ApiDoc\Support\CommandRunner;
 use Hyperf\Apex\Test\Support\TempDirectory;
 use Hyperf\Apex\Test\WebSocket\Support\WsAnnotationRegistrar;
@@ -105,8 +105,8 @@ final class GenerateApifoxDocCommandTest extends TestCase
             'websocket' => ['path' => '/ws', 'excluded' => []],
             'api_doc' => [
                 'output_path' => $this->outputDir,
-                'apifox' => ['folder' => 'WebSocket', 'status' => 'developing', 'tags' => ['WebSocket']],
             ],
+            'apifox' => ['folder' => 'WebSocket', 'status' => 'developing', 'tags' => ['WebSocket']],
         ]);
     }
 

@@ -33,7 +33,7 @@ composer62 analyse    # PHPStan level 6，必须 0 error
 - 需要测试环境验收的改动先进 `test` 分支，验收通过再合入 `master`。
 - 提交信息必须符合 Conventional Commits：`<type>(<scope>): <subject>`，
   `type` 取 `feat`/`fix`/`refactor`/`chore`/`docs`/`test`/`perf`/`revert`，
-  `scope` 用包名（`core`、`apidoc`、`websocket`、`reliability`、`metrics`）或跨包主题（`repo`、`docs`）。
+  `scope` 用包名（`core`、`apidoc`、`apidoc-apifox`、`websocket`、`reliability`、`metrics`）或跨包主题（`repo`、`docs`）。
 
 ## 改动时的同步项
 
@@ -47,6 +47,6 @@ composer62 analyse    # PHPStan level 6，必须 0 error
 
 1. 合并到 `master` 后更新 `CHANGELOG.md`（把 `Unreleased` 段落固化为版本号）。
 2. `git tag -a vX.Y.Z -m "chore(release): vX.Y.Z"` 并推送 tag；tag 只增不改。
-3. tag 推送会触发 `.github/workflows/split.yml`，把 5 个子包推送到对应的只读仓
-   （`hyperf-apex-{core,apidoc,websocket,reliability,metrics}`），Packagist 随之索引新版本。
+3. tag 推送会触发 `.github/workflows/split.yml`，把 6 个子包推送到对应的只读仓
+   （`hyperf-apex-{core,apidoc,apidoc-apifox,websocket,reliability,metrics}`），Packagist 随之索引新版本。
 4. 元包 `hyperf-apex/apex` 直接由本仓库（`lbg-sys/hyperf-apex`）发布，无需拆分。

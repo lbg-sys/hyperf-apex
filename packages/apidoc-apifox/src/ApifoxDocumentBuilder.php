@@ -96,7 +96,7 @@ final class ApifoxDocumentBuilder
 
     private function folder(): string
     {
-        return $this->string('api_doc.apifox.folder', 'WebSocket');
+        return $this->string('apifox.folder', 'WebSocket');
     }
 
     /**
@@ -111,7 +111,7 @@ final class ApifoxDocumentBuilder
 
     private function status(): string
     {
-        return $this->string('api_doc.apifox.status', 'developing');
+        return $this->string('apifox.status', 'developing');
     }
 
     /**
@@ -119,7 +119,7 @@ final class ApifoxDocumentBuilder
      */
     private function tags(): array
     {
-        $tags = $this->config->get('api_doc.apifox.tags', ['WebSocket']);
+        $tags = $this->config->get('apifox.tags', ['WebSocket']);
         if (! is_array($tags)) {
             return ['WebSocket'];
         }

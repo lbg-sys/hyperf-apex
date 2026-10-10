@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Hyperf\Apex\Test;
 
+use Hyperf\Apex\ApiDoc\Apifox\Command\GenerateApifoxDocCommand;
+use Hyperf\Apex\ApiDoc\Apifox\ConfigProvider as ApiDocApifoxConfigProvider;
 use Hyperf\Apex\ApiDoc\Command\GenerateApiDocCommand;
-use Hyperf\Apex\ApiDoc\Command\GenerateApifoxDocCommand;
 use Hyperf\Apex\ApiDoc\ConfigProvider as ApiDocConfigProvider;
 use Hyperf\Apex\ConfigProvider as CoreConfigProvider;
 use Hyperf\Apex\Database\Command\SchemaModelCheckCommand;
@@ -47,6 +48,20 @@ final class ConfigProviderTest extends TestCase
 
         $this->assertIsArray($config);
         $this->assertContains(GenerateApiDocCommand::class, $config['commands'] ?? []);
+        // Apifox 导出命令不在 apidoc：它要读长连接契约，随 hyperf-apex/apidoc-apifox 分发。
+        $this->assertNotContains(GenerateApifoxDocCommand::class, $config['commands'] ?? []);
+
+        foreach ($config['publish'] ?? [] as $item) {
+            $this->assertDirectoryExists($item['source']);
+        }
+    }
+
+    public function testApiDocApifoxConfigProvider(): void
+    {
+        $provider = new ApiDocApifoxConfigProvider();
+        $config = $provider();
+
+        $this->assertIsArray($config);
         $this->assertContains(GenerateApifoxDocCommand::class, $config['commands'] ?? []);
 
         foreach ($config['publish'] ?? [] as $item) {

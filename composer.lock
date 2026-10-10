@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "a72089396c417af89b9a9765ef77279e",
+    "content-hash": "813c63652d9f8d1221b8a6058cd17549",
     "packages": [
         {
             "name": "carbonphp/carbon-doctrine-types",
@@ -884,16 +884,14 @@
         },
         {
             "name": "hyperf-apex/apidoc",
-            "version": "dev-main",
+            "version": "dev-master",
             "dist": {
                 "type": "path",
                 "url": "packages/apidoc",
-                "reference": "6a728d702df8a6920936f23760968916b5b1fc26"
+                "reference": "b14489b6214d6ce3989c16fe24452b34a297e3c5"
             },
             "require": {
                 "hyperf-apex/core": "^1.0",
-                "hyperf-apex/reliability": "^1.0",
-                "hyperf-apex/websocket": "^1.0",
                 "php": ">=8.4",
                 "symfony/yaml": "^7.4",
                 "zircote/swagger-php": "^6.12"
@@ -922,11 +920,10 @@
                     "homepage": "https://github.com/lbg-sys"
                 }
             ],
-            "description": "Apex OpenAPI 3.1 & Apifox documentation generator for Hyperf",
+            "description": "Apex OpenAPI 3.1 documentation generator for Hyperf",
             "homepage": "https://github.com/lbg-sys/hyperf-apex-apidoc",
             "keywords": [
                 "apex",
-                "apifox",
                 "hyperf",
                 "openapi",
                 "swoole"
@@ -940,8 +937,64 @@
             }
         },
         {
+            "name": "hyperf-apex/apidoc-apifox",
+            "version": "dev-master",
+            "dist": {
+                "type": "path",
+                "url": "packages/apidoc-apifox",
+                "reference": "6c14e8e8c32118be561d1c3f9a489d6367d3ddbb"
+            },
+            "require": {
+                "hyperf-apex/apidoc": "^1.0",
+                "hyperf-apex/core": "^1.0",
+                "hyperf-apex/websocket": "^1.0",
+                "php": ">=8.4"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "1.0.x-dev",
+                    "dev-main": "1.0.x-dev"
+                },
+                "hyperf": {
+                    "config": "Hyperf\\Apex\\ApiDoc\\Apifox\\ConfigProvider"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Hyperf\\Apex\\ApiDoc\\Apifox\\": "src/"
+                }
+            },
+            "license": [
+                "Apache-2.0"
+            ],
+            "authors": [
+                {
+                    "name": "lbg-sys",
+                    "homepage": "https://github.com/lbg-sys"
+                }
+            ],
+            "description": "Apex Apifox native document export for WebSocket contracts (Hyperf)",
+            "homepage": "https://github.com/lbg-sys/hyperf-apex-apidoc-apifox",
+            "keywords": [
+                "apex",
+                "apifox",
+                "documentation",
+                "hyperf",
+                "swoole",
+                "websocket"
+            ],
+            "support": {
+                "issues": "https://github.com/lbg-sys/hyperf-apex-apidoc-apifox/issues",
+                "source": "https://github.com/lbg-sys/hyperf-apex-apidoc-apifox"
+            },
+            "transport-options": {
+                "relative": true
+            }
+        },
+        {
             "name": "hyperf-apex/core",
-            "version": "dev-main",
+            "version": "dev-master",
             "dist": {
                 "type": "path",
                 "url": "packages/core",
@@ -1017,7 +1070,7 @@
         },
         {
             "name": "hyperf-apex/metrics",
-            "version": "dev-main",
+            "version": "dev-master",
             "dist": {
                 "type": "path",
                 "url": "packages/metrics",
@@ -1071,7 +1124,7 @@
         },
         {
             "name": "hyperf-apex/reliability",
-            "version": "dev-main",
+            "version": "dev-master",
             "dist": {
                 "type": "path",
                 "url": "packages/reliability",
@@ -1133,7 +1186,7 @@
         },
         {
             "name": "hyperf-apex/websocket",
-            "version": "dev-main",
+            "version": "dev-master",
             "dist": {
                 "type": "path",
                 "url": "packages/websocket",

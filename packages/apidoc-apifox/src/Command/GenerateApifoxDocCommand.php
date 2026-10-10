@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Hyperf\Apex\ApiDoc\Command;
+namespace Hyperf\Apex\ApiDoc\Apifox\Command;
 
 use Hyperf\Apex\ApiDoc\Apifox\ApifoxDocumentBuilder;
 use Hyperf\Command\Annotation\Command;
