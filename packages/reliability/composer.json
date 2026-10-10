@@ -23,7 +23,7 @@
     ],
     "require": {
         "php": ">=8.4",
-        "hyperf-apex/core": "^1.0",
+        "hyperf-apex/core": "^2.0",
         "hyperf/cache": "~3.2.0",
         "hyperf/database": "~3.2.0",
         "hyperf/guzzle": "~3.2.0",
@@ -41,8 +41,8 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-master": "1.0.x-dev",
-            "dev-main": "1.0.x-dev"
+            "dev-master": "2.0.x-dev",
+            "dev-main": "2.0.x-dev"
         },
         "hyperf": {
             "config": "Hyperf\\Apex\\Reliability\\ConfigProvider"

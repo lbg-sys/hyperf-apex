@@ -5,6 +5,11 @@
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-10-10
+
+本次为破坏性版本：解除 `hyperf-apex/apidoc` 对 websocket / reliability 的硬依赖，并把限流、幂等中间件
+从 `core` 迁回 `reliability`。应用侧升级前请先读「破坏性变更」与「应用侧需要手工同步」。
+
 ### 破坏性变更
 
 - 限流与幂等中间件从 `hyperf-apex/core` 迁到 `hyperf-apex/reliability`，应用侧需同步
@@ -66,5 +71,6 @@
 - 已发布出去的迁移文件与 `publish/` 模板不得再修改或重命名，只能追加新迁移；修改模板默认值只影响
   之后重新发布的应用，需在本文件中写明应用侧需要手工同步哪一项。
 
-[Unreleased]: https://github.com/lbg-sys/hyperf-apex/compare/v1.0.0...master
+[Unreleased]: https://github.com/lbg-sys/hyperf-apex/compare/v2.0.0...master
+[2.0.0]: https://github.com/lbg-sys/hyperf-apex/compare/v1.0.0...v2.0.0
 [1.0.0]: https://github.com/lbg-sys/hyperf-apex/releases/tag/v1.0.0
