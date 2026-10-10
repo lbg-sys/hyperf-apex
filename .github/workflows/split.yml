@@ -95,6 +95,10 @@ jobs:
           # 主仓根的 LICENSE 在切换到拆分分支后就不在工作区里了，先存起来。
           cp LICENSE /tmp/apex-LICENSE
 
+          # tag 事件时 HEAD 本来就在该 tag 上；手动触发时 checkout 的是所选分支，
+          # 这里显式切到 tag，保证发布内容是 tag 快照，而不是分支的最新提交。
+          git checkout --detach "refs/tags/${TAG}"
+
           # 只取该子目录的历史，得到「以包目录为根」的一棵独立历史。
           git subtree split --prefix="packages/${{ matrix.package }}" --branch="${branch}"
           git checkout "${branch}"
