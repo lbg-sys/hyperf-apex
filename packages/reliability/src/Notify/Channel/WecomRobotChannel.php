@@ -225,15 +225,20 @@ final class WecomRobotChannel implements NotifyChannelInterface
             return $message->format;
         }
 
-        $onlyUserIds = ! $mentions->all && $mentions->mobiles === [] && $mentions->userIds !== [];
+        // 能原样表达的两种情形：有 mentioned_list 字段（text），或全部成员都能写成内联 `<@userid>`。
+        // 能力矩阵只由枚举维护（supportsMentionList / supportsInlineMention），这里不再硬编码一遍 ——
+        // 两处各写一份时，改一处漏一处不会报错，只会静默把消息发成错误的 msgtype。
+        if ($message->format->supportsMentionList()) {
+            return $message->format;
+        }
 
-        return match ($message->format) {
-            NotifyMessageFormat::TEXT => NotifyMessageFormat::TEXT,
-            NotifyMessageFormat::MARKDOWN => $onlyUserIds ? NotifyMessageFormat::MARKDOWN : NotifyMessageFormat::TEXT,
-            // v2 明确不支持 `<@userid>`，带 @ 只能换成 text
-            NotifyMessageFormat::MARKDOWN_V2 => NotifyMessageFormat::TEXT,
-            default => $message->format,
-        };
+        $inlineExpressible = ! $mentions->all && $mentions->mobiles === [] && $mentions->userIds !== [];
+        if ($message->format->supportsInlineMention() && $inlineExpressible) {
+            return $message->format;
+        }
+
+        // 其余情形（markdown 带手机号或 @all、markdown_v2 带任何 @）只有 text 的字段能表达。
+        return NotifyMessageFormat::TEXT;
     }
 
     /** @return array<string, mixed> */

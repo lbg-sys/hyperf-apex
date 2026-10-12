@@ -12,6 +12,7 @@ use Hyperf\Apex\Test\Support\StubLoggerFactory;
 use Hyperf\Config\Config;
 use Hyperf\Redis\RedisFactory;
 use Hyperf\Redis\RedisProxy;
+use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
@@ -121,6 +122,16 @@ final class RateLimiterAttemptTest extends TestCase
         $this->assertSame('1000', $arguments[4], '消耗 1 令牌 = 1000 毫令牌');
 
         $this->assertSame(1, $proxy->calls[0][1][2], '只有 KEYS[1]，numKeys = 1');
+    }
+
+    public function testIllegalFailureModeIsRejectedAtConstruction(): void
+    {
+        // 拼错（Close / shut / 之类）此前会被当成 fail-open：限流保护在 Redis 故障时静默失效，
+        // 没有任何日志或异常。这种配置错误必须在构造期就暴露出来。
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('failure_mode');
+
+        $this->limiter(new FakeRedisProxy(), ['failure_mode' => 'Close']);
     }
 
     private function rule(): RateLimitRule

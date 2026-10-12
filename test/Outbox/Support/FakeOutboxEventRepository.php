@@ -19,6 +19,12 @@ use Hyperf\Database\Exception\UniqueConstraintViolationException;
  */
 final class FakeOutboxEventRepository implements OutboxEventRepositoryInterface
 {
+    /** 测试辅助：renewLease() 收到的 id（按调用顺序）。 */
+    public array $renewedIds = [];
+
+    /** 测试辅助：false 表示本次已不再持有租约（被别的 worker 接管）。 */
+    public bool $renewLeaseResult = true;
+
     /** @var array<int, array<string, mixed>> */
     private array $rows = [];
 
@@ -100,6 +106,24 @@ final class FakeOutboxEventRepository implements OutboxEventRepositoryInterface
         }
 
         return $claims;
+    }
+
+    public function renewLease(int $id, string $lockToken, string $lockExpireTime, string $now): bool
+    {
+        $this->renewedIds[] = $id;
+
+        $row = $this->rows[$id] ?? null;
+        if (! $this->renewLeaseResult
+            || $row === null
+            || $row['status'] !== OutboxEventStatus::PROCESSING->value
+            || $row['lock_token'] !== $lockToken) {
+            return false;
+        }
+
+        $this->rows[$id]['lock_expire_time'] = $lockExpireTime;
+        $this->rows[$id]['update_time'] = $now;
+
+        return true;
     }
 
     public function markSucceeded(int $id, string $lockToken, ?string $resultSummary, string $now): bool

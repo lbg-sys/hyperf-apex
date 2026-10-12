@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Hyperf\Apex\Outbound;
 
+use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
+use Hyperf\Apex\Logging\LoggerChannels;
 use Hyperf\Apex\Outbound\DTO\OutboundRequestDTO;
 use Hyperf\Apex\Outbound\DTO\OutboundResponseDTO;
 use Hyperf\Apex\Outbound\Exception\OutboundCallException;
@@ -38,11 +40,14 @@ final class OutboundHttpClient
 
     private readonly LoggerInterface $logger;
 
+    /** 惰性创建并复用：Guzzle 客户端内部持有连接池，每次请求新建等于放弃 keep-alive。 */
+    private ?Client $client = null;
+
     public function __construct(
         private readonly ClientFactory $clientFactory,
         LoggerFactory $loggerFactory,
     ) {
-        $this->logger = $loggerFactory->get('outbound', 'outbound');
+        $this->logger = LoggerChannels::resolve($loggerFactory, 'outbound', 'outbound');
     }
 
     /**
@@ -54,14 +59,16 @@ final class OutboundHttpClient
             throw OutboundCallException::misconfigured($request, '请求地址为空，请检查对应的第三方地址配置');
         }
 
-        $startedAt = microtime(true);
+        // 计时统一走单调时钟：墙上时钟被 NTP 校时会回拨，microtime 的差值会出现负数，
+        // 而 OutboundRecorder::secondsSince() 本来就是按 hrtime 口径写的。
+        $startedAt = hrtime(true);
 
         try {
-            $response = $this->clientFactory->create()->request($request->method, $request->url, $this->options($request));
+            $response = $this->client()->request($request->method, $request->url, $this->options($request));
         } catch (GuzzleException $exception) {
             $this->logger->error(
                 sprintf('[出站] %s 传输失败：%s', $request->purpose, $exception->getMessage()),
-                $this->context($request) + ['duration_ms' => round((microtime(true) - $startedAt) * 1000, 2)],
+                $this->context($request) + ['duration_ms' => round(OutboundRecorder::secondsSince($startedAt) * 1000, 2)],
             );
 
             // 传输层失败（超时、DNS、TLS）：在没有异常分类的前提下统一记失败，
@@ -69,7 +76,7 @@ final class OutboundHttpClient
             OutboundRecorder::record(
                 $request->target,
                 OutboundRecorder::RESULT_FAILURE,
-                microtime(true) - $startedAt,
+                OutboundRecorder::secondsSince($startedAt),
             );
 
             throw OutboundCallException::fromTransport($request, $exception);
@@ -81,7 +88,7 @@ final class OutboundHttpClient
             statusCode: $response->getStatusCode(),
             body: mb_substr($rawBody, 0, self::BODY_LIMIT),
             decoded: $this->decode($rawBody),
-            durationMs: round((microtime(true) - $startedAt) * 1000, 2),
+            durationMs: round(OutboundRecorder::secondsSince($startedAt) * 1000, 2),
         );
 
         $context = $this->context($request) + [
@@ -102,10 +109,22 @@ final class OutboundHttpClient
         OutboundRecorder::record(
             $request->target,
             OutboundRecorder::resultFromStatus($result->statusCode),
-            microtime(true) - $startedAt,
+            OutboundRecorder::secondsSince($startedAt),
         );
 
         return $result;
+    }
+
+    /**
+     * 复用同一个 Guzzle 客户端。
+     *
+     * 每次请求都 create() 会重建 handler 栈与新连接；出站目标通常是固定的几个第三方 host，
+     * 复用之后同一 host 的 keep-alive 连接才真正被用上。请求级差异（超时、TLS、代理）
+     * 都在 RequestOptions 里逐次传，不依赖客户端构造参数。
+     */
+    private function client(): Client
+    {
+        return $this->client ??= $this->clientFactory->create();
     }
 
     /** @return array<string, mixed> */

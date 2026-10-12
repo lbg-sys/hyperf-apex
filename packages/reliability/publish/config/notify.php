@@ -17,12 +17,13 @@ return [
         WecomRobotChannel::class,
     ],
 
-    /* 出站 HTTP 默认值。渠道配置未显式指定时使用。 */
-    'http' => [
-        'connect_timeout_seconds' => (int) env('NOTIFY_HTTP_CONNECT_TIMEOUT_SECONDS', 5),
-        'timeout_seconds' => (int) env('NOTIFY_HTTP_TIMEOUT_SECONDS', 10),
-        'verify_tls' => (bool) env('NOTIFY_HTTP_VERIFY_TLS', true),
-    ],
+    /*
+     * 出站 HTTP 的 connect_timeout / timeout / verify_tls 不在这里配置。
+     *
+     * 它们属于「怎么连上去」的参数，由调用方投影成 NotifyTargetDTO 时逐次指定
+     * （见该 DTO 的属性默认值）。这里曾经有一组 notify.http.* 键，但全仓库没有任何读取点，
+     * 配它不会生效 —— 删掉而不是留一个会骗人的开关。
+     */
 
     /*
      * 企业微信群机器人的协议参数（来源：官方「消息推送配置说明」）。

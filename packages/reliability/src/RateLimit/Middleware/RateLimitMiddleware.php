@@ -10,6 +10,7 @@ use Hyperf\Apex\Http\ClientIpResolver;
 use Hyperf\Apex\Http\HandlerMethodResolver;
 use Hyperf\Apex\Http\IpRuleMatcher;
 use Hyperf\Apex\Http\Middleware\AbstractMiddleware;
+use Hyperf\Apex\Logging\LoggerChannels;
 use Hyperf\Apex\RateLimit\RateLimiter;
 use Hyperf\Apex\RateLimit\RateLimitIdentityResolverRegistry;
 use Hyperf\Apex\RateLimit\RateLimitResult;
@@ -39,6 +40,9 @@ final class RateLimitMiddleware extends AbstractMiddleware
     /** @var null|RateLimitWhitelist 缓存：白名单由纯配置派生，运行期不变 */
     private ?RateLimitWhitelist $whitelist = null;
 
+    /** @var array<string, true> 已按 scope 告警过：同一处配置错误不该每个请求都写一条日志 */
+    private array $warnedScopes = [];
+
     public function __construct(
         LoggerFactory $loggerFactory,
         private readonly ConfigInterface $config,
@@ -49,7 +53,7 @@ final class RateLimitMiddleware extends AbstractMiddleware
         private readonly ClientIpResolver $clientIp,
         private readonly IpRuleMatcher $ipRules,
     ) {
-        $this->logger = $loggerFactory->get('rate_limit', 'shared');
+        $this->logger = LoggerChannels::resolve($loggerFactory, 'rate_limit', 'shared');
     }
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
@@ -71,14 +75,20 @@ final class RateLimitMiddleware extends AbstractMiddleware
 
         $narrowest = null;
         $rejected = null;
+        $rejectedResult = null;
         foreach ($rules as $rule) {
             $identity = $this->identities->resolve($rule->scope, $request);
             if ($identity === null || $identity === '') {
                 // 宁可不限流，也不能错限流：退化成共享桶等于让所有主体共用一个配额。
-                $this->logger->warning('限流维度缺少解析器或主体标识，已跳过该规则。', [
-                    'rule' => $rule->name,
-                    'scope' => $rule->scope,
-                ]);
+                // 只按 scope 告警一次：注解里的 scope 没注册时这条路径每个请求都会命中，
+                // 每请求一条 warning 会把日志盘写满，真故障反而被自己淹没。
+                if (! isset($this->warnedScopes[$rule->scope])) {
+                    $this->warnedScopes[$rule->scope] = true;
+                    $this->logger->warning('限流维度缺少解析器或主体标识，已跳过该规则。', [
+                        'rule' => $rule->name,
+                        'scope' => $rule->scope,
+                    ]);
+                }
                 continue;
             }
 
@@ -89,13 +99,16 @@ final class RateLimitMiddleware extends AbstractMiddleware
 
             if (! $result->allowed) {
                 $rejected = $rule;
+                $rejectedResult = $result;
 
                 break;
             }
         }
 
-        if ($narrowest !== null && $rejected !== null) {
-            $this->writeHeaders($narrowest);
+        if ($rejected !== null) {
+            // 响应头必须来自「被拒的那条规则」：按最小剩余额度挑出来的可能是一条放行规则，
+            // 它的 headers() 不带 Retry-After，客户端就不知道自己该等多久。
+            $this->writeHeaders($rejectedResult);
 
             throw new BusinessException(ErrorCode::TOO_MANY_REQUESTS, $rejected->message ?? self::MESSAGE);
         }

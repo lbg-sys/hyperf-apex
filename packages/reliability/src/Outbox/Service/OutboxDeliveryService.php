@@ -7,6 +7,7 @@ namespace Hyperf\Apex\Outbox\Service;
 use Carbon\CarbonImmutable;
 use Hyperf\Apex\Enum\ErrorCode;
 use Hyperf\Apex\Exception\BusinessException;
+use Hyperf\Apex\Logging\LoggerChannels;
 use Hyperf\Apex\Outbox\Contract\OutboxHandlerRegistryInterface;
 use Hyperf\Apex\Outbox\DTO\OutboxClaimDTO;
 use Hyperf\Apex\Outbox\DTO\OutboxHandleResultDTO;
@@ -19,6 +20,8 @@ use Hyperf\Contract\ConfigInterface;
 use Hyperf\Logger\LoggerFactory;
 use Psr\Log\LoggerInterface;
 use Throwable;
+
+use function mb_strcut;
 
 /**
  * 发件箱投递：认领一批 → 执行 handler → 按结果写回状态。
@@ -46,11 +49,14 @@ final class OutboxDeliveryService
         private readonly ConfigInterface $config,
         LoggerFactory $loggerFactory,
     ) {
-        $this->logger = $loggerFactory->get('outbox', 'error');
+        $this->logger = LoggerChannels::resolve($loggerFactory, 'outbox', 'error');
     }
 
     /**
-     * 认领并投递一批到期事件，返回本轮处理的条数。
+     * 认领并投递一批到期事件，返回本轮**认领**的条数。
+     *
+     * 认领数不等于实际执行数：批内逐条处理时，若某条的租约在轮到它之前已经失效
+     * （被其它 worker 接管），那一条会被跳过（见 deliverOne）。
      *
      * @param int $limit 单轮上限；调用方（消费进程 / 手工执行）按积压量决定
      */
@@ -78,12 +84,36 @@ final class OutboxDeliveryService
     /**
      * 投递单条已认领的事件。
      *
-     * 返回 false 表示写回被 fencing 拦下：租约在投递期间过期、事件已被别的 worker 接管，
-     * 本次结果作废。这是正常并发路径，不要当错误处理。
+     * 返回 false 有两种来源，语义都是「本次结果作废」，都是正常并发路径而非错误：
+     * - 执行前续租失败：事件已被别的 worker 接管，本次连 handler 都不该执行；
+     * - 写回被 fencing 拦下：投递期间租约过期，本次结果已经不是权威结果。
      */
     public function deliverOne(OutboxClaimDTO $claim): bool
     {
         $message = $claim->message;
+
+        /*
+         * 执行前续租并确认自己仍持有租约。
+         *
+         * 整批事件共用认领时写下的那一个租约，而批内是逐条串行处理的：处理到靠后的条目时，
+         * 原始租约可能已经过期、事件已被别的 worker 重新认领。此时若照样执行 handler，
+         * 同一条事件的副作用会发生两次 —— fencing 只保证写回只有一份，拦不住副作用。
+         */
+        $renewedAt = Time::now();
+        if (! $this->repository->renewLease(
+            $message->id,
+            $claim->lockToken,
+            $renewedAt->addSeconds($this->lockSeconds())->toDateTimeString(),
+            $renewedAt->toDateTimeString(),
+        )) {
+            $this->logger->warning('Outbox 事件租约已失效（可能已被其他 worker 接管），跳过本次执行。', [
+                'id' => $message->id,
+                'event_type' => $message->eventType,
+            ]);
+
+            return false;
+        }
+
         $result = $this->handle($message);
         $now = Time::now();
         $nowString = $now->toDateTimeString();
@@ -207,8 +237,11 @@ final class OutboxDeliveryService
              * 没注册 handler 按「可重试」处理，不当作永久失败：缺注册最常见的原因是发布顺序
              * （消费进程先起来、handler 的部署还没跟上），下一次尝试就能自愈。
              * 一直没注册的话会在尝试次数用尽后进死信 —— 既不无限重试，也不静默丢事件。
+             *
+             * 级别取 warning：发布窗口里这属于预期内的过渡状态，用 error 会把发布期的日志刷满，
+             * 真正的错误反而被淹没；不会无限重试这一点已由尝试次数上限保证。
              */
-            $this->logger->error('Outbox 事件没有注册 handler。', [
+            $this->logger->warning('Outbox 事件没有注册 handler。', [
                 'id' => $message->id,
                 'event_type' => $message->eventType,
             ]);
@@ -258,7 +291,12 @@ final class OutboxDeliveryService
         return max(1, (int) $this->config->get('outbox.lock_seconds', 300));
     }
 
-    /** 错误与结果摘要按 `outbox.error_max_length` 截断：列是 text，别让一条超长异常把整行撑爆。 */
+    /**
+     * 错误与结果摘要按 `outbox.error_max_length` 截断：列是 text，别让一条超长异常把整行撑爆。
+     *
+     * 口径是**字节**而不是字符：列上限本身就是字节（text = 65535 字节），按字符数算在中文
+     * 内容下会超。用 mb_strcut 截断，保证不会切碎多字节字符（与 WecomRobotChannel 同一口径）。
+     */
     private function truncate(?string $message): ?string
     {
         $max = (int) $this->config->get('outbox.error_max_length', 4000);
@@ -266,6 +304,6 @@ final class OutboxDeliveryService
             return $message;
         }
 
-        return mb_strlen($message) > $max ? mb_substr($message, 0, $max) . '…' : $message;
+        return strlen($message) > $max ? mb_strcut($message, 0, $max) . '…' : $message;
     }
 }

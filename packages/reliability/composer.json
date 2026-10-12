@@ -24,10 +24,12 @@
     "require": {
         "php": ">=8.4",
         "hyperf-apex/core": "^2.0",
-        "hyperf/cache": "~3.2.0",
         "hyperf/database": "~3.2.0",
         "hyperf/guzzle": "~3.2.0",
         "hyperf/redis": "~3.2.0"
+    },
+    "suggest": {
+        "hyperf-apex/metrics": "出站调用会自动上报 core_outbound_requests_total 与 core_outbound_request_duration_seconds；未安装时静默跳过（见 OutboundRecorder）"
     },
     "autoload": {
         "psr-4": {

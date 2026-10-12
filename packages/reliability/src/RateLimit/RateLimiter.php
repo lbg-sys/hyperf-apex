@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Hyperf\Apex\RateLimit;
 
+use Hyperf\Apex\Logging\LoggerChannels;
 use Hyperf\Contract\ConfigInterface;
 use Hyperf\Logger\LoggerFactory;
 use Hyperf\Redis\RedisFactory;
 use Hyperf\Redis\RedisProxy;
+use InvalidArgumentException;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -90,10 +92,10 @@ LUA;
         ConfigInterface $config,
         LoggerFactory $loggerFactory,
     ) {
-        $this->logger = $loggerFactory->get('rate_limit', 'shared');
+        $this->logger = LoggerChannels::resolve($loggerFactory, 'rate_limit', 'shared');
         $this->redis = $factory->get((string) $config->get('rate_limit.redis_pool', 'default'));
         $this->prefix = (string) $config->get('rate_limit.prefix', 'core:rl:');
-        $this->failOpen = ((string) $config->get('rate_limit.failure_mode', 'open')) !== 'close';
+        $this->failOpen = $this->resolveFailureMode((string) $config->get('rate_limit.failure_mode', 'open'));
         $this->ttlJitterRatio = (float) $config->get('rate_limit.ttl_jitter_ratio', 0.1);
         $this->scriptSha = sha1(self::SCRIPT);
     }
@@ -190,6 +192,21 @@ LUA;
         $jitter = (int) round($seconds * $this->ttlJitterRatio);
 
         return max(1, $seconds + random_int(-$jitter, $jitter));
+    }
+
+    /**
+     * 故障降级方向。
+     *
+     * 只接受 open / close：此前是「不等于 close 就当成 open」，配成 Close、shut 之类的写法
+     * 会在毫无提示的情况下变成 fail-open —— 限流保护静默失效，是最不该静默的一类配置错误。
+     */
+    private function resolveFailureMode(string $mode): bool
+    {
+        if (! in_array($mode, ['open', 'close'], true)) {
+            throw new InvalidArgumentException(sprintf('rate_limit.failure_mode 只能是 open 或 close，当前是「%s」。', $mode));
+        }
+
+        return $mode === 'open';
     }
 
     private function nowMilliseconds(): int

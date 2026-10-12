@@ -52,6 +52,24 @@ final class OutboxDeliveryServiceTest extends TestCase
         $this->assertSame(1, $handler->calls);
         // 认领即消耗一次尝试，handler 看到的就是这一次。
         $this->assertSame(1, $handler->messages[0]->attemptCount);
+        // 执行 handler 之前先续租：整批只认领一次租约，批内逐条处理时它可能已经过期。
+        $this->assertSame([$id], $repository->renewedIds);
+    }
+
+    public function testDeliveryIsSkippedWhenLeaseWasLost(): void
+    {
+        $repository = new FakeOutboxEventRepository();
+        $repository->renewLeaseResult = false;
+        $handler = new FakeOutboxHandler('demo.created', OutboxHandleResultDTO::success('已投递'));
+        $service = $this->service($repository, [$handler]);
+        $this->seed($repository);
+
+        // 租约已经不在自己手上（被别的 worker 接管）时必须跳过 handler：
+        // fencing 只保证写回只有一份，拦不住副作用，重复执行就是重复的下游动作。
+        $this->assertSame(1, $service->deliverBatch(10));
+
+        $this->assertSame(1, count($repository->renewedIds));
+        $this->assertSame(0, $handler->calls);
     }
 
     public function testRetryableSchedulesBackoff(): void

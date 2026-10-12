@@ -32,6 +32,15 @@ interface OutboxEventRepositoryInterface
      */
     public function claimDue(string $now, int $limit, string $lockToken, string $lockExpireTime): array;
 
+    /**
+     * 续租：把当前认领的租约推后。返回 false 表示已不再持有该令牌（被别的 worker 接管了）。
+     *
+     * 一批事件共用认领时写下的那一个租约，而批内是逐条串行执行的 —— 处理到靠后的条目时
+     * 原租约可能已经过期。执行 handler 之前必须确认租约还在，否则会把同一条事件的副作用
+     * 执行两次（fencing 只拦得住写回，拦不住副作用）。
+     */
+    public function renewLease(int $id, string $lockToken, string $lockExpireTime, string $now): bool;
+
     /** 写回成功。令牌不匹配（已被接管）时返回 false 且不做任何写入。 */
     public function markSucceeded(int $id, string $lockToken, ?string $resultSummary, string $now): bool;
 

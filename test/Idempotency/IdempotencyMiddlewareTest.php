@@ -172,7 +172,27 @@ final class IdempotencyMiddlewareTest extends TestCase
         $this->assertStringContainsString('状态冲突', (string) $replay->getBody());
     }
 
-    private function middleware(InMemoryIdempotencyRecordRepository $repository): IdempotencyMiddleware
+    public function testOversizedResponseBodyIsNotCached(): void
+    {
+        // 记录按 retention_seconds 保留 7 天：不设上限就是让一次大响应长期占库。
+        // 超限时不入库响应体，但状态码照旧重放 —— 幂等的核心保证（不重复执行）不变。
+        $middleware = $this->middleware(new InMemoryIdempotencyRecordRepository(), ['max_response_bytes' => 4]);
+        $request = $this->request('POST', $this->dispatched('create'), [Idempotent::HEADER => 'req-12345678']);
+
+        $first = $middleware->process($request, $this->handler());
+        $this->assertSame('false', $first->getHeaderLine('Idempotency-Replayed'));
+
+        $replay = $middleware->process($request, $this->handler());
+
+        $this->assertSame('true', $replay->getHeaderLine('Idempotency-Replayed'));
+        $this->assertSame($first->getStatusCode(), $replay->getStatusCode());
+        $this->assertSame('', (string) $replay->getBody());
+    }
+
+    /**
+     * @param array<string, mixed> $idempotencyConfig
+     */
+    private function middleware(InMemoryIdempotencyRecordRepository $repository, array $idempotencyConfig = []): IdempotencyMiddleware
     {
         $responses = new ApiResponseFactory(new Config(['response' => ['response_dto' => ApiResponseDTO::class]]));
         $context = new FakePrincipalContext();
@@ -187,6 +207,8 @@ final class IdempotencyMiddlewareTest extends TestCase
             ])),
             $responses,
             new ResponseEncoderResolver(new JsonEncoderContainer(), $responses),
+            // 响应体入库上限：默认 256KB，需要时由用例覆盖（见 testOversizedResponseBodyIsNotCached）。
+            new Config(['idempotency' => array_merge(['max_response_bytes' => 262144], $idempotencyConfig)]),
             new NullLogger(),
         );
     }

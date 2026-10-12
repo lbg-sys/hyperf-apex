@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hyperf\Apex\Outbox\Process;
 
+use Hyperf\Apex\Logging\LoggerChannels;
 use Hyperf\Apex\Outbox\Service\OutboxDeliveryService;
 use Hyperf\Contract\ConfigInterface;
 use Hyperf\Logger\LoggerFactory;
@@ -37,7 +38,7 @@ final class OutboxConsumeProcess extends AbstractProcess
     ) {
         parent::__construct($container);
 
-        $this->logger = $loggerFactory->get('outbox', 'error');
+        $this->logger = LoggerChannels::resolve($loggerFactory, 'outbox', 'error');
     }
 
     public function isEnable($server): bool

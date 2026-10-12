@@ -29,9 +29,11 @@ final class IdempotencyService
         string $requestId,
         string $requestHash,
     ): IdempotencyClaimDTO {
-        $nowTimestamp = time();
-        $now = date('Y-m-d H:i:s', $nowTimestamp);
-        $expireTime = date('Y-m-d H:i:s', $nowTimestamp + $this->retentionSeconds());
+        // 时间统一走 Time::now()（与 prune() 同一口径）：测试可以用 CarbonImmutable::setTestNow()
+        // 冻结时间，而 time()/date() 会绕过它，让接管与过期的用例只能靠真实等待。
+        $now = Time::now();
+        $nowString = $now->toDateTimeString();
+        $expireTime = $now->addSeconds($this->retentionSeconds())->toDateTimeString();
 
         try {
             $lockToken = $this->newLockToken();
@@ -54,12 +56,12 @@ final class IdempotencyService
             throw new RuntimeException('幂等记录唯一键冲突后无法读取记录。');
         }
 
-        $staleBefore = date('Y-m-d H:i:s', $nowTimestamp - $this->processingTimeoutSeconds());
-        if ($record->expire_time <= $now
+        $staleBefore = $now->subSeconds($this->processingTimeoutSeconds())->toDateTimeString();
+        if ($record->expire_time <= $nowString
             || ($record->status === IdempotencyStatus::PROCESSING->value && $record->update_time <= $staleBefore)) {
             // 接管即换令牌：旧执行者手上的令牌就此失效，它之后写回结果会被 fencing 拦下。
             $lockToken = $this->newLockToken();
-            if ($this->repository->restart($record->id, $requestHash, $lockToken, $expireTime, $now, $staleBefore)) {
+            if ($this->repository->restart($record->id, $requestHash, $lockToken, $expireTime, $nowString, $staleBefore)) {
                 $record->request_hash = $requestHash;
                 $record->status = IdempotencyStatus::PROCESSING->value;
                 $record->lock_token = $lockToken;

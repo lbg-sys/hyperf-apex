@@ -105,6 +105,20 @@ final class OutboxEventRepository extends AbstractRepository implements OutboxEv
         });
     }
 
+    public function renewLease(int $id, string $lockToken, string $lockExpireTime, string $now): bool
+    {
+        $updated = $this->query()
+            ->where('id', $id)
+            ->where('status', OutboxEventStatus::PROCESSING->value)
+            ->where('lock_token', $lockToken)
+            ->update([
+                'lock_expire_time' => $lockExpireTime,
+                'update_time' => $now,
+            ]);
+
+        return $updated === 1;
+    }
+
     public function markSucceeded(int $id, string $lockToken, ?string $resultSummary, string $now): bool
     {
         return $this->transition($id, $lockToken, [
