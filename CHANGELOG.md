@@ -3,6 +3,14 @@
 本文件记录 `hyperf-apex/*` 各组件包的对外变更，格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [Unreleased]
+
+### 变更
+
+- 去掉 `publish/access_log.php` 默认排除里的 `/health/*`：它是为那个从未实现、已在 4.0.0 中
+  整体移除的就绪探针留的默认值。应用自己暴露了健康检查端点、又不想让它进 access 日志时，
+  写进 `access_log.exclude` 或 `ACCESS_LOG_EXCLUDE_PATHS` 即可。
+
 ## [4.0.0] - 2026-10-12
 
 ### 破坏性变更
@@ -311,11 +319,9 @@
   其余承诺（发布 ID、`/metrics` 与 `/metrics/dashboard` 端点、`idle_timeout` 默认 180、
   限流 1 秒 50 条、超限码 `10007`、启动检查的三个键、`WsPusherInterface` 的四个方法、
   协议字段与推送 `type: push`、房间名规则、只读仓命名、`CONTRIBUTING.md`）都与代码一致。
-- **整个移除「就绪探针」相关的配置**（该功能从未实现，也不属于组件职责）：删除 `hyperf-apex/core`
-  的 `publish/health.php`（它唯一的键 `health.redis_pool` 全仓零读取，注释却承诺「就绪探针
-  `/health/ready` 探测的 Redis 连接池」），并去掉 `publish/access_log.php` 默认排除里的
-  `/health/*` —— 那是为这个不存在的探针留的。应用自己暴露了健康检查端点、又不想让它进 access
-  日志时，把它写进 `access_log.exclude`（或 `ACCESS_LOG_EXCLUDE_PATHS`）即可。
+- 删除 `hyperf-apex/core` 的 `publish/health.php`：它承诺的「就绪探针（`/health/ready` 探测的
+  Redis 连接池）」在本仓库里从未实现，也不属于组件职责 —— 而它唯一的键 `health.redis_pool`
+  全仓零读取。
 - `OutboxPublisher::sortKeys()` 的注释说明为什么**不复用** `ArrayNormalizer::sortKeys()`：
   两者的排序 flag 不同（`ksort` 默认 SORT_REGULAR 与 SORT_STRING 对数字字符串键的顺序不同），
   而摘要生成后已落库成 `idempotency_key` —— 换排序规则会让同一份载荷算出不同的键，
