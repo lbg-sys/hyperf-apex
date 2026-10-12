@@ -7,8 +7,8 @@ namespace Hyperf\Apex\Support;
 /**
  * 类名通配匹配，语义与 api_doc.excluded / websocket.excluded 一致。
  *
- * 抽出来是为了让「哪些类不进对外文档」这件事只有一份实现：入口文档（Apifox）
- * 和流程文档锚点校验（DocConsistencyTest）必须按同一份清单过滤，否则两边会漂。
+ * 抽出来是为了让「哪些类不进对外文档」这件事只有一份实现：所有对外文档出口
+ * 必须按同一份清单过滤，否则两边会漂。
  */
 final class ClassNamePattern
 {

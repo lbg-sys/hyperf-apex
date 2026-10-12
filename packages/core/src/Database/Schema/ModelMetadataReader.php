@@ -29,7 +29,7 @@ use function Hyperf\Support\class_uses_recursive;
 final class ModelMetadataReader
 {
     /**
-     * 关系方法常省略返回类型声明（例如 `PublishAccount::devices()`），只能从 `@return` 注解识别。
+     * 关系方法常省略返回类型声明（例如 `User::roles()`），只能从 `@return` 注解识别。
      */
     private const RELATION_TYPES = [
         'HasMany', 'HasOne', 'BelongsTo', 'BelongsToMany',

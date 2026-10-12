@@ -5,8 +5,8 @@
 
 ## [Unreleased]
 
-本次为破坏性版本：清除从多端 SaaS 业务工程带入组件库的租户 / 代理商 / 系统端领域概念，组件只保留中性机制。
-应用侧升级前请先读「破坏性变更」。
+本次为破坏性版本：清除从多端 SaaS 业务工程带入组件库的租户 / 代理商 / 系统端 / 设备端领域概念，
+以及源码注释、配置模板与文档中残留的具体业务示例，组件只保留中性机制。应用侧升级前请先读「破坏性变更」。
 
 ### 破坏性变更
 
@@ -21,6 +21,9 @@
   签名变为 `(int $userId, string $userType): void`。
 - `Hyperf\Apex\WebSocket\Registry\WsConnectionStore` 的连接表移除 `tenant_id` 列（此前只写入、从不读出）。
   共享内存表在启动时重建，重启进程即生效，不涉及数据库迁移。
+- 删除 `Hyperf\Apex\WebSocket\Controller\DeviceWsGatewayController`：它把「设备端」这条业务端划分固化进了组件。
+  `hyperf-apex/websocket` 不再内置任何入口，应用需自己声明 `#[WsGateway]` 入口 —— 否则启动期校验会报
+  「至少需要一个 #[WsGateway] 入口」。
 
 ## [2.0.0] - 2026-10-10
 

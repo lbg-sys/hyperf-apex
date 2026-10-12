@@ -31,14 +31,14 @@ final class WsConnectionStoreTest extends TestCase
         ]));
 
         $store = new WsConnectionStore();
-        $principal = new Principal(userId: 7, userType: 'device', username: 'device-7', sessionId: 'session-7');
+        $principal = new Principal(userId: 7, userType: 'hub', username: 'hub-7', sessionId: 'session-7');
 
-        $store->register(WsSession::open('ws', 1, '/ws/device', $principal, time()));
+        $store->register(WsSession::open('ws', 1, '/ws/hub', $principal, time()));
         $this->assertSame(['ws:1'], $store->allConnections());
-        $this->assertSame(['ws:1'], $store->connectionsByUser('device', 7));
+        $this->assertSame(['ws:1'], $store->connectionsByUser('hub', 7));
 
         try {
-            $store->register(WsSession::open('ws', 2, '/ws/device', $principal, time()));
+            $store->register(WsSession::open('ws', 2, '/ws/hub', $principal, time()));
             $this->fail('超出单用户连接上限时 register() 必须抛异常。');
         } catch (RuntimeException $exception) {
             $this->assertStringContainsString('超过上限', $exception->getMessage());
@@ -46,6 +46,6 @@ final class WsConnectionStoreTest extends TestCase
 
         $this->assertSame(['ws:1'], $store->allConnections());
         $this->assertSame(1, $store->countConnections());
-        $this->assertSame(['ws:1'], $store->connectionsByEndpoint('/ws/device'));
+        $this->assertSame(['ws:1'], $store->connectionsByEndpoint('/ws/hub'));
     }
 }

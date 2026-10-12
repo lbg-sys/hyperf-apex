@@ -128,7 +128,7 @@ final class WsEventMarkdownRenderer
         $definitions = [];
         foreach ($this->handlers->all() as $event => $definition) {
             // 事件与入口无关（任何接入端都能调所有事件），所以入口被排除不代表事件也被排除 ——
-            // 这里必须再按同一份清单过滤一次，否则测试探针会混进 admin/device 的契约文档。
+            // 这里必须再按同一份清单过滤一次，否则测试探针会混进对外契约文档。
             if (ClassNamePattern::matches($excluded, $definition->handlerClass)) {
                 continue;
             }
@@ -229,7 +229,7 @@ final class WsEventMarkdownRenderer
             ErrorCode::SUCCESS => '—',
             ErrorCode::INVALID_ARGUMENT => '报文不是 JSON、缺少 `event`、事件未注册、房间名不合法',
             ErrorCode::VALIDATION_FAILED => 'payload 字段未通过 DTO 校验，`data.errors` 给出明细',
-            ErrorCode::UNAUTHENTICATED => '事件需要用户身份，而连接是设备端；或握手的 token 无效',
+            ErrorCode::UNAUTHENTICATED => '事件需要用户身份，而当前连接没有用户身份；或握手的 token 无效',
             ErrorCode::RESOURCE_NOT_FOUND => '目标资源不存在或不属于当前用户',
             ErrorCode::RESOURCE_CONFLICT => '房间成员已达上限、单连接房间数超限',
             ErrorCode::INTERNAL_ERROR => '未预期异常，服务端已记录日志，连接保持',

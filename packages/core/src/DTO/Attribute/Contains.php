@@ -13,7 +13,7 @@ use Hyperf\Apex\DTO\Schema\SchemaReference;
  * 数组中至少（最多）多少个元素满足给定 Schema。
  *
  * 与 #[ArrayOf] 的区别：ArrayOf 约束「全部元素」的类型，Contains 只要求「存在若干个」。
- * 例：#[Contains(AdminUserDTO::class, min: 1)] 表示列表里至少有一个管理员。
+ * 例：#[Contains(PrimaryOwnerDTO::class, min: 1)] 表示列表里至少有一个主负责人。
  */
 #[Attribute(Attribute::TARGET_PROPERTY)]
 final class Contains implements SchemaAttribute

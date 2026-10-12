@@ -17,8 +17,8 @@ use InvalidArgumentException;
  * Attribute 一样写类名而不是组件名字符串，拼错会在构建期报错而不是留下悬空 $ref。
  * mapping 里的类必须同时出现在 #[OneOf] 里，否则它不会被注册成组件。
  *
- * 例：#[OneOf(CardPaymentDTO::class, WalletPaymentDTO::class)]
- *     #[Discriminator('payType', ['card' => CardPaymentDTO::class, 'wallet' => WalletPaymentDTO::class])]
+ * 例：#[OneOf(TextContentDTO::class, FileContentDTO::class)]
+ *     #[Discriminator('contentType', ['text' => TextContentDTO::class, 'file' => FileContentDTO::class])]
  */
 #[Attribute(Attribute::TARGET_PROPERTY)]
 final class Discriminator implements SchemaAttribute

@@ -27,7 +27,7 @@ final class OutboundRecorder
     /**
      * 记录一次出站调用。
      *
-     * @param string $target 出站目标标识符（例如 'http', 'wecom_robot', 'payment' 等）
+     * @param string $target 出站目标标识符（例如 'http', 'wecom_robot' 等）
      * @param string $result 调用结果（success, failure, throttled）
      * @param float $seconds 本次调用耗时（秒）
      */

@@ -53,8 +53,8 @@ final class ApifoxDocumentBuilderTest extends TestCase
         $this->assertSame('WebSocket', $collection['name']);
 
         $item = $collection['items'][0];
-        $this->assertSame('设备长连接', $item['name']);
-        $this->assertSame('/ws/device', $item['api']['path']);
+        $this->assertSame('主连接', $item['name']);
+        $this->assertSame('/ws/hub', $item['api']['path']);
         $this->assertSame(WsEventMarkdownRenderer::messageTemplate(), $item['api']['requestBody']['message']);
         $this->assertSame('json', $item['api']['requestBody']['messageType']);
         $this->assertSame('developing', $item['api']['status']);
@@ -73,9 +73,9 @@ final class ApifoxDocumentBuilderTest extends TestCase
 
         $description = $this->description();
 
-        $this->assertStringContainsString('## 设备长连接', $description);
-        $this->assertStringContainsString('连接路径：`/ws/device`', $description);
-        $this->assertStringContainsString('接入端标识：`device`', $description);
+        $this->assertStringContainsString('## 主连接', $description);
+        $this->assertStringContainsString('连接路径：`/ws/hub`', $description);
+        $this->assertStringContainsString('接入端标识：`hub`', $description);
         $this->assertStringContainsString('## 统一信封', $description);
         $this->assertStringContainsString('## 内置事件', $description);
         // 没有注册业务事件时给出明确说明，而不是留一段空白让人以为文档坏了。
@@ -85,15 +85,15 @@ final class ApifoxDocumentBuilderTest extends TestCase
     public function testBusinessEventSectionRendersFieldTable(): void
     {
         $this->registerGateway();
-        WsAnnotationRegistrar::route(DeviceStatusHandler::class, 'handle', 'device.status');
+        WsAnnotationRegistrar::route(DeviceStatusHandler::class, 'handle', 'hub.status');
 
         $description = $this->description();
 
-        $this->assertStringContainsString('### `device.status`', $description);
+        $this->assertStringContainsString('### `hub.status`', $description);
         $this->assertStringContainsString(DeviceStatusHandler::class . '::handle', $description);
         // 字段表复用 DTOSchemaFactory：#[FieldDescription] 自动进文档，不需要维护第二份说明。
-        // 有默认值的字段把缺省值也拼进说明列（`deviceNo = ''` → 默认值 ""）。
-        $this->assertStringContainsString('| `deviceNo` | string | 否 | 设备编号；默认值 "" |', $description);
+        // 有默认值的字段把缺省值也拼进说明列（`hubNo = ''` → 默认值 ""）。
+        $this->assertStringContainsString('| `hubNo` | string | 否 | 设备编号；默认值 "" |', $description);
         // 错误码表按 WS 侧的真实语义列出（事件未注册、payload 校验失败、房间上限…）。
         $this->assertStringContainsString('## 错误码', $description);
         $this->assertStringContainsString('事件未注册', $description);
@@ -136,10 +136,10 @@ final class ApifoxDocumentBuilderTest extends TestCase
     private function registerGateway(): void
     {
         WsAnnotationRegistrar::gateway(ApifoxGatewayFixture::class, new WsGateway(
-            path: '/ws/device',
+            path: '/ws/hub',
             server: 'ws',
-            endpoint: 'device',
-            name: '设备长连接',
+            endpoint: 'hub',
+            name: '主连接',
         ));
     }
 
@@ -179,7 +179,7 @@ final readonly class DeviceStatusPayloadDTO extends AbstractDTO
 {
     public function __construct(
         #[FieldDescription('设备编号')]
-        public string $deviceNo = '',
+        public string $hubNo = '',
     ) {
     }
 }

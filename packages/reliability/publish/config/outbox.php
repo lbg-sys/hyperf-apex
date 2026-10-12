@@ -12,7 +12,7 @@ return [
      * 由它自己的 eventType() 决定负责哪种事件，这里只列类名。
      * 同一个事件类型注册两个 handler 会在投递时直接报错，不会静默遮蔽其中一个。
      *
-     * 示例：\App\Module\Order\Outbox\OrderPaidHandler::class,
+     * 示例：\App\Outbox\Handler\ExampleHandler::class,
      */
     'handlers' => [],
 

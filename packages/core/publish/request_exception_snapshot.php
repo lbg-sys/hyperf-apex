@@ -21,7 +21,7 @@ $parsePatterns = static function (mixed $value): array {
  * 黑名单：命中的路由不记快照。默认不排除任何路由 ——
  * 「哪些接口的请求体不适合落盘」是应用自己的判断，通用底座写死业务路由，
  * 别的项目拿到的就是一份含义错误的默认值。需要排除时用环境变量给出：
- * REQUEST_EXCEPTION_SNAPSHOT_BLACKLIST=/api/xxx/admin/accounts/*,/api/xxx/xxx/*
+ * REQUEST_EXCEPTION_SNAPSHOT_BLACKLIST=/api/xxx/create,/api/xxx/*
  */
 $blacklist = [
     ...$parsePatterns(env('REQUEST_EXCEPTION_SNAPSHOT_BLACKLIST', '')),

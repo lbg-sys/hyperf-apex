@@ -23,7 +23,7 @@ return [
         GlobalIdentityResolver::class,
         /*
          * 业务端按需扩展（如按 API 密钥限流）：实现 RateLimitIdentityResolverInterface 并在此注册。
-         * 示例：\App\Module\Auth\RateLimit\ApiKeyIdentityResolver::class,
+         * 示例：\App\RateLimit\ApiKeyIdentityResolver::class,
          */
     ],
 

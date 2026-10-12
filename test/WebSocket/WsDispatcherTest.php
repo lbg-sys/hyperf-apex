@@ -215,7 +215,7 @@ final class WsDispatcherTest extends TestCase
         $dispatcher = $this->dispatcher(null, [], $context, new MapContainer([OrderPaidHandler::class => $handler]));
 
         $response = $dispatcher->dispatch(
-            WsSession::open('ws', 1, '/ws/device', $this->principal(), 1_700_000_000),
+            WsSession::open('ws', 1, '/ws/hub', $this->principal(), 1_700_000_000),
             '{"id":"1","event":"order.paid","data":{"orderId":"A-1"}}',
         );
 
@@ -237,7 +237,7 @@ final class WsDispatcherTest extends TestCase
         $context = new FakePrincipalContext();
         $dispatcher = $this->dispatcher(null, [], $context, new MapContainer([OrderPaidHandler::class => $handler]));
 
-        // 设备端用集成 token 接入，会话没有用户身份。
+        // 集成凭证接入的会话没有用户身份。
         $dispatcher->dispatch($this->session(), '{"id":"1","event":"order.paid","data":{"orderId":"A-2"}}');
 
         $this->assertSame('A-2', $handler->received->orderId);
@@ -307,7 +307,7 @@ final class WsDispatcherTest extends TestCase
 
     private function session(): WsSession
     {
-        return WsSession::open('ws', 1, '/ws/device', null, 1_700_000_000);
+        return WsSession::open('ws', 1, '/ws/hub', null, 1_700_000_000);
     }
 
     private function principal(): Principal

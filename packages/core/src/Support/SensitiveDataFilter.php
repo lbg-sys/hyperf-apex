@@ -12,7 +12,7 @@ namespace Hyperf\Apex\Support;
  * - 审计的 change_data / extra_data —— 审计页面是长留存的，敏感值一旦落库就等于泄漏。
  *
  * 口径：
- * - 键名匹配用「包含」而非全等，`admin_password` / `access_token` / `refreshToken` 都能命中；
+ * - 键名匹配用「包含」而非全等，`user_password` / `access_token` / `refreshToken` 都能命中；
  * - 递归深度上限 8 层，超出置 `[depth limited]`；
  * - 非标量、非数组的值置 `[类型名]`；
  * - 命中时值置 `[redacted]`。

@@ -110,7 +110,7 @@ final class OverviewComposerTest extends TestCase
     {
         $gauges = [
             new GaugeSample('core_alert_backlog_seconds', '告警积压秒数', [], 400),
-            new GaugeSample('core_websocket_connections', '在线连接数', ['endpoint' => '/ws/device'], 12),
+            new GaugeSample('core_websocket_connections', '在线连接数', ['endpoint' => '/ws/hub'], 12),
         ];
 
         $overview = $this->compose([], [], $gauges);
@@ -122,7 +122,7 @@ final class OverviewComposerTest extends TestCase
 
         // 采样指标原样带给页面。
         $this->assertSame('core_alert_backlog_seconds', $overview->gauges[0]->name);
-        $this->assertSame(['endpoint' => '/ws/device'], $overview->gauges[1]->labels);
+        $this->assertSame(['endpoint' => '/ws/hub'], $overview->gauges[1]->labels);
         $this->assertSame(12, $overview->gauges[1]->value);
     }
 

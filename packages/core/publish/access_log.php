@@ -19,12 +19,12 @@ $parsePatterns = static function (mixed $value): array {
 
 /*
  * access 日志（runtime/logs/access）的排除名单，按请求原始 path 做 fnmatch 匹配，
- * `*` 是通配符（例：/api/xxx/devices/*）。
+ * `*` 是通配符（例：/api/xxx/*）。
  *
  * 默认只排除与业务无关的基础设施路径。高频业务接口（心跳、上报这类）是 access 日志里
  * 量级最大的来源，但「哪些高频接口的留痕已经有别的去处」只有应用知道，
  * 通用底座写死业务路由，别的项目拿到的就是一份含义错误的默认值 ——
- * 需要排除时用环境变量给出：ACCESS_LOG_EXCLUDE_PATHS=/api/xxx/devices/report,/api/xxx/*
+ * 需要排除时用环境变量给出：ACCESS_LOG_EXCLUDE_PATHS=/api/xxx/get_list,/api/xxx/*
  *
  * 排除健康探针：探针按秒级轮询，正常时没有任何信息量，只在故障时才值得看一眼 ——
  * 而排除只作用于正常完成的请求，未就绪的 503 照旧留痕（见 RequestTimingMiddleware::shouldLog）。

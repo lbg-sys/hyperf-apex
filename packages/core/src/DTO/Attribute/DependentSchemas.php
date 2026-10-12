@@ -13,7 +13,7 @@ use Hyperf\Apex\DTO\Schema\SchemaReference;
  * 某个键出现时，整个对象额外需要满足的 Schema。
  *
  * 与 #[DependentRequired] 的区别：后者只能追加必填字段名，这里可以追加完整结构约束。
- * 例：#[DependentSchemas(['payMethod' => PaymentDetailDTO::class])]
+ * 例：#[DependentSchemas(['contentType' => ContentDetailDTO::class])]
  */
 #[Attribute(Attribute::TARGET_PROPERTY)]
 final class DependentSchemas implements SchemaAttribute

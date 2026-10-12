@@ -49,7 +49,7 @@ final class WsEventMarkdownRendererTest extends TestCase
     {
         $description = $this->description();
 
-        $this->assertStringContainsString('| `deviceNo` | string | 是 | 设备编号；长度 1-64 |', $description);
+        $this->assertStringContainsString('| `hubNo` | string | 是 | 设备编号；长度 1-64 |', $description);
         $this->assertStringContainsString('| `items` | array<RendererItemDTO> | 否 | 上报项 |', $description);
         $this->assertStringContainsString('| `extra` | map<string, string> | 否 | 扩展字段 |', $description);
         // 可空标记拼在类型名之后。
@@ -79,7 +79,7 @@ final class WsEventMarkdownRendererTest extends TestCase
 
     public function testVoidResponseSaysSoInsteadOfLeavingAnEmptyTable(): void
     {
-        WsAnnotationRegistrar::route(VoidResponseHandler::class, 'handle', 'device.ack');
+        WsAnnotationRegistrar::route(VoidResponseHandler::class, 'handle', 'hub.ack');
 
         $this->assertStringContainsString('**响应**：无响应体（`data` 为空）。', $this->description());
     }
@@ -91,7 +91,7 @@ final class WsEventMarkdownRendererTest extends TestCase
         // 数组是列表、映射与枚举是对象、标量按类型给占位值 ——
         // 三种都给 [] 就等于示例与同一行的类型列互相矛盾。
         $this->assertStringContainsString(
-            '"data":{"deviceNo":"","items":[],"extra":{},"status":{"key":"value","name":"说明"},"note":"","count":0}',
+            '"data":{"hubNo":"","items":[],"extra":{},"status":{"key":"value","name":"说明"},"note":"","count":0}',
             $description,
         );
     }
@@ -108,22 +108,22 @@ final class WsEventMarkdownRendererTest extends TestCase
     public function testExcludedHandlerIsKeptOutOfTheEventSection(): void
     {
         // 事件与入口无关，所以入口被排除不代表事件也被排除 —— 渲染时必须再按同一份清单过滤一次。
-        WsAnnotationRegistrar::route(ProbeOnlyHandler::class, 'handle', 'device.probe');
+        WsAnnotationRegistrar::route(ProbeOnlyHandler::class, 'handle', 'hub.probe');
 
         $description = $this->description(['websocket' => ['path' => '/ws', 'excluded' => ['*ProbeOnlyHandler']]]);
 
-        $this->assertStringContainsString('### `device.report`', $description);
-        $this->assertStringNotContainsString('device.probe', $description);
+        $this->assertStringContainsString('### `hub.report`', $description);
+        $this->assertStringNotContainsString('hub.probe', $description);
     }
 
     /** @param array<string, mixed> $config */
     private function description(array $config = []): string
     {
         WsAnnotationRegistrar::gateway(RendererGatewayFixture::class, new WsGateway(
-            path: '/ws/device',
+            path: '/ws/hub',
             server: 'ws',
-            endpoint: 'device',
-            name: '设备长连接',
+            endpoint: 'hub',
+            name: '主连接',
         ));
 
         $config = new Config(array_merge([
@@ -132,7 +132,7 @@ final class WsEventMarkdownRendererTest extends TestCase
         ], $config));
 
         // 主事件始终注册：排除清单按类名匹配，只影响被排除的那个 handler。
-        WsAnnotationRegistrar::route(RendererPayloadHandler::class, 'handle', 'device.report');
+        WsAnnotationRegistrar::route(RendererPayloadHandler::class, 'handle', 'hub.report');
 
         $definition = (new WsGatewayScanner($config))->all()[RendererGatewayFixture::class];
         $this->assertInstanceOf(WsGatewayDefinition::class, $definition);
@@ -171,7 +171,7 @@ final readonly class RendererPayloadDTO extends AbstractDTO
         #[Required]
         #[FieldDescription('设备编号')]
         #[Length(min: 1, max: 64)]
-        public string $deviceNo,
+        public string $hubNo,
         #[FieldDescription('上报项')]
         #[ArrayOf(RendererItemDTO::class)]
         public array $items = [],

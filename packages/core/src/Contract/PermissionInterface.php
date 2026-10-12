@@ -12,7 +12,7 @@ namespace Hyperf\Apex\Contract;
 interface PermissionInterface
 {
     /**
-     * 获取权限唯一标识符（例如: "user:create"、"order:export"）。
+     * 获取权限唯一标识符（例如 "user:create"、"role:assign"）。
      */
     public function identifier(): string;
 }

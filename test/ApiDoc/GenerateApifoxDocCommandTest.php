@@ -56,7 +56,7 @@ final class GenerateApifoxDocCommandTest extends TestCase
         $this->assertSame(['apifoxProject', '$schema', 'webSocketCollection'], array_keys($document));
 
         $item = $document['webSocketCollection'][0]['items'][0];
-        $this->assertSame('/ws/device', $item['api']['path']);
+        $this->assertSame('/ws/hub', $item['api']['path']);
         $this->assertSame(['WebSocket'], $item['api']['tags']);
         $this->assertSame(WsEventMarkdownRenderer::messageTemplate(), $item['api']['requestBody']['message']);
     }
@@ -73,10 +73,10 @@ final class GenerateApifoxDocCommandTest extends TestCase
     private function registerGateway(): void
     {
         WsAnnotationRegistrar::gateway(ApifoxCommandGatewayFixture::class, new WsGateway(
-            path: '/ws/device',
+            path: '/ws/hub',
             server: 'ws',
-            endpoint: 'device',
-            name: '设备长连接',
+            endpoint: 'hub',
+            name: '主连接',
         ));
     }
 

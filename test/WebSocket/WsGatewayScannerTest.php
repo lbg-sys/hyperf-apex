@@ -34,22 +34,22 @@ final class WsGatewayScannerTest extends TestCase
 
     public function testValidGatewayIsScanned(): void
     {
-        $this->register(ValidGateway::class, '/ws/device', 'device', name: '设备长连接');
+        $this->register(ValidGateway::class, '/ws/hub', 'hub', name: '主连接');
 
         $definitions = $this->scanner()->all();
         $this->assertArrayHasKey(ValidGateway::class, $definitions);
 
         $definition = $definitions[ValidGateway::class];
-        $this->assertSame('/ws/device', $definition->path);
-        $this->assertSame('device', $definition->endpoint);
-        $this->assertSame('设备长连接', $definition->displayName());
+        $this->assertSame('/ws/hub', $definition->path);
+        $this->assertSame('hub', $definition->endpoint);
+        $this->assertSame('主连接', $definition->displayName());
     }
 
     public function testDisplayNameFallsBackToPath(): void
     {
-        $this->register(ValidGateway::class, '/ws/device', 'device');
+        $this->register(ValidGateway::class, '/ws/hub', 'hub');
 
-        $this->assertSame('/ws/device', $this->scanner()->all()[ValidGateway::class]->displayName());
+        $this->assertSame('/ws/hub', $this->scanner()->all()[ValidGateway::class]->displayName());
     }
 
     public function testEmptyCollectionIsRejected(): void
@@ -60,45 +60,45 @@ final class WsGatewayScannerTest extends TestCase
 
     public function testPathMustStartWithSlash(): void
     {
-        $this->register(ValidGateway::class, 'ws/device', 'device');
+        $this->register(ValidGateway::class, 'ws/hub', 'hub');
 
         $this->assertDeclarationError('必须以 / 开头');
     }
 
     public function testPathMustStayUnderConfiguredPrefix(): void
     {
-        $this->register(ValidGateway::class, '/other/device', 'device');
+        $this->register(ValidGateway::class, '/other/hub', 'hub');
 
         $this->assertDeclarationError('不在 websocket.path');
     }
 
     public function testEndpointIsRequired(): void
     {
-        $this->register(ValidGateway::class, '/ws/device', '');
+        $this->register(ValidGateway::class, '/ws/hub', '');
 
         $this->assertDeclarationError('未声明 endpoint');
     }
 
     public function testServerMustExistInServerConfig(): void
     {
-        $this->register(ValidGateway::class, '/ws/device', 'device', server: 'socket');
+        $this->register(ValidGateway::class, '/ws/hub', 'hub', server: 'socket');
 
         $this->assertDeclarationError('在 config/autoload/server.php 里不存在');
     }
 
     public function testDuplicatePathAndEndpointAreRejected(): void
     {
-        $this->register(ValidGateway::class, '/ws/device', 'device');
-        $this->register(SecondGateway::class, '/ws/device', 'device');
+        $this->register(ValidGateway::class, '/ws/hub', 'hub');
+        $this->register(SecondGateway::class, '/ws/hub', 'hub');
 
         $errors = implode("\n", $this->declarationErrors());
-        $this->assertStringContainsString('入口 (server=ws, path=/ws/device) 重复', $errors);
-        $this->assertStringContainsString('endpoint「device」重复', $errors);
+        $this->assertStringContainsString('入口 (server=ws, path=/ws/hub) 重复', $errors);
+        $this->assertStringContainsString('endpoint「hub」重复', $errors);
     }
 
     public function testLifecycleInterfacesAreRequired(): void
     {
-        $this->register(NotAGateway::class, '/ws/device', 'device');
+        $this->register(NotAGateway::class, '/ws/hub', 'hub');
 
         $errors = implode("\n", $this->declarationErrors());
         $this->assertStringContainsString(OnOpenInterface::class, $errors);
@@ -108,7 +108,7 @@ final class WsGatewayScannerTest extends TestCase
 
     public function testMiddlewareMustExist(): void
     {
-        $this->register(ValidGateway::class, '/ws/device', 'device', middlewares: ['App\Nope\Missing']);
+        $this->register(ValidGateway::class, '/ws/hub', 'hub', middlewares: ['App\Nope\Missing']);
 
         $this->assertDeclarationError('中间件 App\Nope\Missing 不存在');
     }
@@ -116,14 +116,14 @@ final class WsGatewayScannerTest extends TestCase
     public function testMiddlewareMustImplementMiddlewareInterface(): void
     {
         // Hyperf 对不合规的中间件不报错、只是静默不执行 —— 结果是握手鉴权被跳过而没有迹象。
-        $this->register(ValidGateway::class, '/ws/device', 'device', middlewares: [NotAMiddleware::class]);
+        $this->register(ValidGateway::class, '/ws/hub', 'hub', middlewares: [NotAMiddleware::class]);
 
         $this->assertDeclarationError('未实现 Psr\Http\Server\MiddlewareInterface');
     }
 
     public function testCompliantMiddlewarePassesValidation(): void
     {
-        $this->register(ValidGateway::class, '/ws/device', 'device', middlewares: [NoopMiddleware::class]);
+        $this->register(ValidGateway::class, '/ws/hub', 'hub', middlewares: [NoopMiddleware::class]);
 
         $definition = $this->scanner()->all()[ValidGateway::class];
         $this->assertSame([NoopMiddleware::class], $definition->middlewares);
