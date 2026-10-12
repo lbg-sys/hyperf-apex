@@ -13,18 +13,13 @@ use RuntimeException;
  *
  * `registered` 是唯一带状态的集合（register / unregister / hasConnection 共用），
  * 推送侧的「房间成员自愈」用例依赖它来表达「连接行已经没了」。
+ *
+ * 房间索引不在这个替身里 —— 它是独立的契约，见 FakeWsRoomStore。
  */
 final class FakeWsConnectionStore implements WsConnectionStoreInterface
 {
-    public bool $joinRoomResult = true;
-
-    public ?RuntimeException $joinRoomThrowable = null;
-
-    /** @var list<array{0: string, 1: string}> */
-    public array $joined = [];
-
-    /** @var list<array{0: string, 1: string}> */
-    public array $left = [];
+    /** 摆布「注册失败」（表满、超单用户上限）：入口必须在此时撤回会话并断开连接。 */
+    public ?RuntimeException $registerThrowable = null;
 
     /** @var array<string, true> */
     public array $registered = [];
@@ -37,9 +32,6 @@ final class FakeWsConnectionStore implements WsConnectionStoreInterface
 
     /** @var list<string> connectionsByUser() 的返回值 */
     public array $userConnections = [];
-
-    /** @var list<string> connectionsByRoom() 的返回值 */
-    public array $roomConnections = [];
 
     /** @var list<string> connectionsByEndpoint() 的返回值 */
     public array $endpointConnections = [];
@@ -57,10 +49,12 @@ final class FakeWsConnectionStore implements WsConnectionStoreInterface
 
     public int $userCount = 0;
 
-    public int $roomCount = 0;
-
     public function register(WsSession $session): void
     {
+        if ($this->registerThrowable !== null) {
+            throw $this->registerThrowable;
+        }
+
         $this->registered[$session->id()] = true;
     }
 
@@ -92,11 +86,6 @@ final class FakeWsConnectionStore implements WsConnectionStoreInterface
         return $this->userConnections;
     }
 
-    public function connectionsByRoom(string $room): array
-    {
-        return $this->roomConnections;
-    }
-
     public function connectionsByEndpoint(string $endpoint): array
     {
         return $this->endpointConnections;
@@ -115,26 +104,5 @@ final class FakeWsConnectionStore implements WsConnectionStoreInterface
     public function countUsers(): int
     {
         return $this->userCount;
-    }
-
-    public function countRooms(): int
-    {
-        return $this->roomCount;
-    }
-
-    public function joinRoom(string $connectionId, string $room): bool
-    {
-        if ($this->joinRoomThrowable !== null) {
-            throw $this->joinRoomThrowable;
-        }
-
-        $this->joined[] = [$connectionId, $room];
-
-        return $this->joinRoomResult;
-    }
-
-    public function leaveRoom(string $connectionId, string $room): void
-    {
-        $this->left[] = [$connectionId, $room];
     }
 }

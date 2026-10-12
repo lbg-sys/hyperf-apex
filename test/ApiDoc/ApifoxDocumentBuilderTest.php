@@ -16,6 +16,7 @@ use Hyperf\Config\Config;
 use Hyperf\Contract\OnCloseInterface;
 use Hyperf\Contract\OnMessageInterface;
 use Hyperf\Contract\OnOpenInterface;
+use Hyperf\Server\ServerInterface;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -147,7 +148,8 @@ final class ApifoxDocumentBuilderTest extends TestCase
     private function builder(array $config = []): ApifoxDocumentBuilder
     {
         $config = new Config(array_merge([
-            'server' => ['servers' => [['name' => 'ws']]],
+            // 入口声明的 server 必须是 WebSocket 服务：握手回调只挂在那种端口上。
+            'server' => ['servers' => [['name' => 'ws', 'type' => ServerInterface::SERVER_WEBSOCKET]]],
             'websocket' => ['path' => '/ws', 'excluded' => []],
             'apifox' => ['folder' => 'WebSocket', 'status' => 'developing', 'tags' => ['WebSocket']],
         ], $config));

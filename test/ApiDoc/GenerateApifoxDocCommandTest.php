@@ -18,6 +18,7 @@ use Hyperf\Config\Config;
 use Hyperf\Contract\OnCloseInterface;
 use Hyperf\Contract\OnMessageInterface;
 use Hyperf\Contract\OnOpenInterface;
+use Hyperf\Server\ServerInterface;
 use JsonException;
 use PHPUnit\Framework\TestCase;
 
@@ -101,7 +102,8 @@ final class GenerateApifoxDocCommandTest extends TestCase
     private function config(): Config
     {
         return new Config([
-            'server' => ['servers' => [['name' => 'ws']]],
+            // 入口声明的 server 必须是 WebSocket 服务：握手回调只挂在那种端口上。
+            'server' => ['servers' => [['name' => 'ws', 'type' => ServerInterface::SERVER_WEBSOCKET]]],
             'websocket' => ['path' => '/ws', 'excluded' => []],
             'api_doc' => [
                 'output_path' => $this->outputDir,

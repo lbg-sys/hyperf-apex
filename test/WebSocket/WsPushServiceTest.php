@@ -8,6 +8,7 @@ use Hyperf\Apex\DTO\AbstractDTO;
 use Hyperf\Apex\Test\Support\StubLoggerFactory;
 use Hyperf\Apex\Test\WebSocket\Support\FakeSender;
 use Hyperf\Apex\Test\WebSocket\Support\FakeWsConnectionStore;
+use Hyperf\Apex\Test\WebSocket\Support\FakeWsRoomStore;
 use Hyperf\Apex\WebSocket\Service\WsPushService;
 use PHPUnit\Framework\TestCase;
 
@@ -62,14 +63,29 @@ final class WsPushServiceTest extends TestCase
     public function testPushToRoomPrunesMembersWhoseConnectionRowIsGone(): void
     {
         $store = new FakeWsConnectionStore();
-        $store->roomConnections = ['ws:1', 'ws:2'];
         $store->registered = ['ws:2' => true];
+        $roomStore = new FakeWsRoomStore();
+        $roomStore->members['room:1'] = ['ws:1', 'ws:2'];
         $sender = new FakeSender();
 
-        $this->service($store, $sender)->pushToRoom('room:1', 'demo.created', new DemoPushPayloadDTO('A-1'));
+        $this->service($store, $sender, $roomStore)->pushToRoom('room:1', 'demo.created', new DemoPushPayloadDTO('A-1'));
 
-        $this->assertSame([['ws:1', 'room:1']], $store->left);
+        $this->assertSame([['ws:1', 'room:1']], $roomStore->left);
         $this->assertSame([2], array_column($sender->pushed, 0));
+    }
+
+    public function testPushToRoomWithOnlyStaleMembersSendsNothing(): void
+    {
+        // 全员失效时连信封都不该编：编了也只是丢掉。
+        $store = new FakeWsConnectionStore();
+        $roomStore = new FakeWsRoomStore();
+        $roomStore->members['room:1'] = ['ws:1'];
+        $sender = new FakeSender();
+
+        $this->service($store, $sender, $roomStore)->pushToRoom('room:1', 'demo.created', new DemoPushPayloadDTO('A-1'));
+
+        $this->assertSame([['ws:1', 'room:1']], $roomStore->left);
+        $this->assertSame([], $sender->pushed);
     }
 
     public function testBroadcastSendsToEveryConnection(): void
@@ -83,9 +99,17 @@ final class WsPushServiceTest extends TestCase
         $this->assertSame([1, 2, 3], array_column($sender->pushed, 0));
     }
 
-    private function service(FakeWsConnectionStore $store, FakeSender $sender): WsPushService
-    {
-        return new WsPushService($store, $sender, StubLoggerFactory::create());
+    private function service(
+        FakeWsConnectionStore $store,
+        ?FakeSender $sender = null,
+        ?FakeWsRoomStore $roomStore = null,
+    ): WsPushService {
+        return new WsPushService(
+            $store,
+            $roomStore ?? new FakeWsRoomStore(),
+            $sender ?? new FakeSender(),
+            StubLoggerFactory::create(),
+        );
     }
 }
 

@@ -5,9 +5,10 @@ declare(strict_types=1);
 namespace Hyperf\Apex\Test\WebSocket;
 
 use Hyperf\Apex\Security\Principal;
+use Hyperf\Apex\Test\WebSocket\Support\WsTestConfig;
 use Hyperf\Apex\WebSocket\Registry\WsConnectionStore;
 use Hyperf\Apex\WebSocket\Session\WsSession;
-use Hyperf\Config\Config;
+use Hyperf\Apex\WebSocket\Support\TableLimits;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
@@ -88,9 +89,60 @@ final class WsConnectionStoreTest extends TestCase
         $this->assertFalse($store->hasConnection('ws:1'));
     }
 
+    public function testOversizedConnectionIdIsRejectedInsteadOfTruncated(): void
+    {
+        // Swoole\Table 对超长字符串是「警告 + 截断」而不是报错，截断后的连接 id 解析不出 fd：
+        // 推送与回收都会找不到这条连接。所以必须在写入前自己拦住。
+        $store = $this->store();
+        $server = str_repeat('s', TableLimits::CONNECTION_ID_BYTES);
+
+        try {
+            $store->register(WsSession::open($server, 1, '/ws/hub', null, 1000));
+            $this->fail('连接 id 超出索引列上限时必须抛异常。');
+        } catch (RuntimeException $exception) {
+            $this->assertStringContainsString('超过索引列的', $exception->getMessage());
+        }
+
+        $this->assertSame([], $store->allConnections());
+    }
+
+    public function testOversizedEndpointIsRejected(): void
+    {
+        // 接入端标识超长会被截断，而推送寻址拿的是未截断的值，等于永远匹配不上。
+        $store = $this->store();
+
+        try {
+            $store->register(WsSession::open('ws', 1, '/ws/' . str_repeat('a', 40), null, 1000));
+            $this->fail('接入端标识超长时必须抛异常。');
+        } catch (RuntimeException $exception) {
+            $this->assertStringContainsString('接入端标识', $exception->getMessage());
+        }
+    }
+
+    public function testOversizedUserTypeIsRejectedBeforeItBreaksTheUserKey(): void
+    {
+        // 用户类型是用户索引键的一部分，而 unregister() 用行里的 user_type 重建这个键：
+        // 一旦被截断，键就换了，用户索引里那条记录永远摘不掉。
+        $store = $this->store();
+        $principal = new Principal(userId: 7, userType: str_repeat('t', 33), username: 'u', sessionId: 's');
+
+        try {
+            $store->register(WsSession::open('ws', 1, '/ws/hub', $principal, 1000));
+            $this->fail('用户类型超长时必须抛异常。');
+        } catch (RuntimeException $exception) {
+            $this->assertStringContainsString('用户类型', $exception->getMessage());
+        }
+
+        $this->assertSame([], $store->allConnections());
+    }
+
     private function store(): WsConnectionStore
     {
-        WsConnectionStore::init(self::config());
+        WsConnectionStore::init(WsTestConfig::make([
+            // 行数会被 Swoole 向上取整到 2 的幂（最小 64），用例只关心「能不能写进去」。
+            'table_size' => 8,
+            'max_connections_per_user' => 1,
+        ]));
 
         $store = new WsConnectionStore();
         foreach ($store->allConnections() as $connectionId) {
@@ -98,17 +150,5 @@ final class WsConnectionStoreTest extends TestCase
         }
 
         return $store;
-    }
-
-    private static function config(): Config
-    {
-        return new Config([
-            'websocket' => [
-                'table_size' => 8,
-                'max_connections_per_user' => 1,
-                'room_member_capacity' => 4,
-                'room_table_size' => 4,
-            ],
-        ]);
     }
 }

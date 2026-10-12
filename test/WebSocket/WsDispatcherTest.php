@@ -7,11 +7,14 @@ namespace Hyperf\Apex\Test\WebSocket;
 use Hyperf\Apex\DTO\AbstractDTO;
 use Hyperf\Apex\Enum\ErrorCode;
 use Hyperf\Apex\Http\ArgumentResolver\RequestDataHydrator;
-use Hyperf\Apex\Security\Contract\PrincipalContextInterface;
 use Hyperf\Apex\Security\Principal;
 use Hyperf\Apex\Test\Support\StubLoggerFactory;
+use Hyperf\Apex\Test\WebSocket\Support\FakePrincipalContext;
 use Hyperf\Apex\Test\WebSocket\Support\FakeWsConnectionStore;
+use Hyperf\Apex\Test\WebSocket\Support\FakeWsRoomStore;
+use Hyperf\Apex\Test\WebSocket\Support\MapContainer;
 use Hyperf\Apex\Test\WebSocket\Support\WsAnnotationRegistrar;
+use Hyperf\Apex\Test\WebSocket\Support\WsTestConfig;
 use Hyperf\Apex\WebSocket\DTO\WsSubscriptionResultDTO;
 use Hyperf\Apex\WebSocket\Protocol\WsBuiltinEvent;
 use Hyperf\Apex\WebSocket\RateLimit\WsConnectionRateLimiter;
@@ -19,7 +22,6 @@ use Hyperf\Apex\WebSocket\Registry\WsHandlerRegistry;
 use Hyperf\Apex\WebSocket\Service\WsDispatcher;
 use Hyperf\Apex\WebSocket\Session\WsRequestContext;
 use Hyperf\Apex\WebSocket\Session\WsSession;
-use Hyperf\Config\Config;
 use Hyperf\Support\Filesystem\Filesystem;
 use Hyperf\Translation\FileLoader;
 use Hyperf\Translation\Translator;
@@ -163,16 +165,16 @@ final class WsDispatcherTest extends TestCase
 
     public function testSubscribeJoinsRoomInStoreAndSession(): void
     {
-        $store = new FakeWsConnectionStore();
+        $roomStore = new FakeWsRoomStore();
         $session = $this->session();
 
-        $response = $this->dispatcher($store)->dispatch(
+        $response = $this->dispatcher($this->registeredStore(), roomStore: $roomStore)->dispatch(
             $session,
             '{"id":"1","event":"sys.subscribe","data":{"room":"room:1"}}',
         );
 
         $this->assertSame(ErrorCode::SUCCESS->value, $response->code);
-        $this->assertSame([['ws:1', 'room:1']], $store->joined);
+        $this->assertSame([['ws:1', 'room:1']], $roomStore->joined);
         $this->assertSame(['room:1'], $session->rooms());
 
         $data = $response->data;
@@ -186,7 +188,7 @@ final class WsDispatcherTest extends TestCase
         $session = $this->session();
         $session->joinRoom('first');
 
-        $response = $this->dispatcher(null, ['max_rooms_per_connection' => 1])->dispatch(
+        $response = $this->dispatcher($this->registeredStore(), ['max_rooms_per_connection' => 1])->dispatch(
             $session,
             '{"id":"1","event":"sys.subscribe","data":{"room":"second"}}',
         );
@@ -196,12 +198,27 @@ final class WsDispatcherTest extends TestCase
         $this->assertSame(['first'], $session->rooms());
     }
 
+    public function testSubscribeOnUnregisteredConnectionIsInternalError(): void
+    {
+        // 房间索引不认识连接索引，所以派发层必须自己保证「连接仍然在索引里」。
+        // 连接行已经没了还给房间加成员，等于往成员列表里塞一个 onClose 也摘不掉的 id。
+        $roomStore = new FakeWsRoomStore();
+
+        $response = $this->dispatcher(roomStore: $roomStore)->dispatch(
+            $this->session(),
+            '{"id":"1","event":"sys.subscribe","data":{"room":"room:1"}}',
+        );
+
+        $this->assertSame(ErrorCode::INTERNAL_ERROR->value, $response->code);
+        $this->assertSame([], $roomStore->joined);
+    }
+
     public function testSubscribeReportsRoomCapacityFailure(): void
     {
-        $store = new FakeWsConnectionStore();
-        $store->joinRoomResult = false;
+        $roomStore = new FakeWsRoomStore();
+        $roomStore->joinRoomResult = false;
 
-        $response = $this->dispatcher($store)->dispatch(
+        $response = $this->dispatcher($this->registeredStore(), roomStore: $roomStore)->dispatch(
             $this->session(),
             '{"id":"1","event":"sys.subscribe","data":{"room":"room:1"}}',
         );
@@ -212,27 +229,27 @@ final class WsDispatcherTest extends TestCase
 
     public function testUnsubscribeLeavesRoom(): void
     {
-        $store = new FakeWsConnectionStore();
+        $roomStore = new FakeWsRoomStore();
         $session = $this->session();
         $session->joinRoom('room:1');
 
-        $response = $this->dispatcher($store)->dispatch(
+        $response = $this->dispatcher(roomStore: $roomStore)->dispatch(
             $session,
             '{"id":"2","event":"sys.unsubscribe","data":{"room":"room:1"}}',
         );
 
         $this->assertSame(ErrorCode::SUCCESS->value, $response->code);
-        $this->assertSame([['ws:1', 'room:1']], $store->left);
+        $this->assertSame([['ws:1', 'room:1']], $roomStore->left);
         $this->assertSame([], $session->rooms());
     }
 
     public function testUnexpectedThrowableBecomesInternalErrorEnvelope(): void
     {
         // 存储层炸了也不能把异常抛给连接层：那会断掉一条本来还健康的连接。
-        $store = new FakeWsConnectionStore();
-        $store->joinRoomThrowable = new RuntimeException('共享内存表不可用');
+        $roomStore = new FakeWsRoomStore();
+        $roomStore->joinRoomThrowable = new RuntimeException('房间索引不可用');
 
-        $response = $this->dispatcher($store)->dispatch(
+        $response = $this->dispatcher($this->registeredStore(), roomStore: $roomStore)->dispatch(
             $this->session(),
             '{"id":"3","event":"sys.subscribe","data":{"room":"room:1"}}',
         );
@@ -326,17 +343,20 @@ final class WsDispatcherTest extends TestCase
         array $config = [],
         ?FakePrincipalContext $context = null,
         ?ContainerInterface $container = null,
+        ?FakeWsRoomStore $roomStore = null,
     ): WsDispatcher {
         $translator = new Translator(new FileLoader(new Filesystem(), BASE_PATH . '/runtime/lang'), 'zh_CN');
-        $configObject = new Config(['websocket' => array_merge([
+        // 以 ConfigProvider 下发的默认为底，只覆盖与用例相关的项（默认值在包内只有一份）。
+        $configObject = WsTestConfig::make(array_replace([
             'max_rooms_per_connection' => 20,
             // 用例里的消息样本只有个位数，窗口给大一点即可保证「同一窗口」这件事是确定的。
             'rate_limit' => ['window_seconds' => 3600, 'max_messages' => 1000],
-        ], $config)]);
+        ], $config));
 
         return new WsDispatcher(
             new WsHandlerRegistry(),
             $store ?? new FakeWsConnectionStore(),
+            $roomStore ?? new FakeWsRoomStore(),
             new RequestDataHydrator(new ValidatorFactory($translator)),
             $context ?? new FakePrincipalContext(),
             // 默认容器在取处理器时直接失败：没注册路由的用例不该走到这一步。
@@ -362,54 +382,23 @@ final class WsDispatcherTest extends TestCase
         return WsSession::open('ws', 1, '/ws/hub', null, 1_700_000_000);
     }
 
+    /**
+     * 已注册了 ws:1 的连接索引替身。
+     *
+     * 订阅路径要求「连接仍然在索引里」，而派发层的输入正是一个已经建立好的会话 ——
+     * 用例里必须显式表达这个前提，否则测的就不是订阅逻辑而是前提检查。
+     */
+    private function registeredStore(): FakeWsConnectionStore
+    {
+        $store = new FakeWsConnectionStore();
+        $store->registered['ws:1'] = true;
+
+        return $store;
+    }
+
     private function principal(): Principal
     {
         return new Principal(userId: 7, userType: 'admin', username: 'tester', sessionId: 'session-id');
-    }
-}
-
-final class FakePrincipalContext implements PrincipalContextInterface
-{
-    public int $setCalls = 0;
-
-    public int $clearCalls = 0;
-
-    private ?Principal $principal = null;
-
-    public function set(Principal $principal): void
-    {
-        ++$this->setCalls;
-        $this->principal = $principal;
-    }
-
-    public function get(): Principal
-    {
-        return $this->principal ?? throw new RuntimeException('当前协程没有身份。');
-    }
-
-    public function clear(): void
-    {
-        ++$this->clearCalls;
-        $this->principal = null;
-    }
-}
-
-/** 只按类名取实例的容器替身：业务事件派发只需要这一个能力。 */
-final class MapContainer implements ContainerInterface
-{
-    /** @param array<string, object> $map */
-    public function __construct(private readonly array $map)
-    {
-    }
-
-    public function get(string $id): mixed
-    {
-        return $this->map[$id] ?? throw new RuntimeException(sprintf('容器里没有 %s。', $id));
-    }
-
-    public function has(string $id): bool
-    {
-        return isset($this->map[$id]);
     }
 }
 

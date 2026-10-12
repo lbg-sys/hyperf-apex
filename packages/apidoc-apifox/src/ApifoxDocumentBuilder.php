@@ -7,6 +7,7 @@ namespace Hyperf\Apex\ApiDoc\Apifox;
 use Hyperf\Apex\Support\ClassNamePattern;
 use Hyperf\Apex\Support\StringList;
 use Hyperf\Apex\WebSocket\Definition\WsGatewayDefinition;
+use Hyperf\Apex\WebSocket\Exception\WsDeclarationException;
 use Hyperf\Apex\WebSocket\Registry\WsGatewayScanner;
 use Hyperf\Contract\ConfigInterface;
 
@@ -34,10 +35,20 @@ final class ApifoxDocumentBuilder
      */
     public function build(): array
     {
+        $definitions = $this->gateways->all();
+        if ($definitions === []) {
+            // 与启动期检查的口径不同：应用装了这个包却不用长连接是正常状态（由
+            // WsDeclarationCheckListener 按 server.php 判定），但「导出一份空契约」不是 ——
+            // 导入方会把空的 webSocketCollection 读成「本来就没有长连接接口」。
+            throw new WsDeclarationException([
+                '至少需要一个 #[WsGateway] 入口：否则导出的契约里一条长连接都没有。',
+            ]);
+        }
+
         $excluded = $this->excluded();
 
         $items = [];
-        foreach ($this->gateways->all() as $definition) {
+        foreach ($definitions as $definition) {
             // 测试入口等不对外：只从文档里去掉，路由照旧注册，否则连不上就没法手工验证。
             if (ClassNamePattern::matches($excluded, $definition->class)) {
                 continue;

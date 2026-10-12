@@ -18,7 +18,7 @@
 | **`hyperf-apex/core`** | `packages/core` | **通用基础底座**（DTO 参数水合、规则校验、统一响应、声明式权限/限流/幂等注解、统一异常、日志审计、Fail-Fast 启动检查） | 仅 Hyperf 基础组件，零外设冗余依赖 |
 | **`hyperf-apex/apidoc`** | `packages/apidoc` | **OpenAPI 契约引擎**（基于 DTO 反射的无侵入 OpenAPI 3.1 生成） | `swagger-php`、`symfony/yaml` |
 | **`hyperf-apex/apidoc-apifox`** | `packages/apidoc-apifox` | **长连接契约导出**（把 `#[WsGateway]` / `#[WsRoute]` 声明渲染成 Apifox 原生 `webSocketCollection`） | `hyperf-apex/apidoc`、`hyperf-apex/websocket` |
-| **`hyperf-apex/websocket`**| `packages/websocket`| **长连接网关**（多端 WebSocket 协议封装、跨 Worker 会话存储、Swoole Table 连接表） | `hyperf/websocket-server` |
+| **`hyperf-apex/websocket`**| `packages/websocket`| **长连接网关**（多端 WebSocket 协议封装、跨 Worker 会话存储、连接索引用 Swoole Table、房间索引可选 Swoole Table 或 Redis） | `hyperf/websocket-server`；`hyperf/redis` 可选（房间索引用 Redis 时需要） |
 | **`hyperf-apex/reliability`**| `packages/reliability`| **高可用套件**（Redis 分布式限流与限流中间件、接口幂等防重与幂等中间件、事务发件箱 Outbox、企微多渠道通知、出站 HTTP 客户端） | `hyperf/redis`、`hyperf/database`、`hyperf/guzzle` |
 | **`hyperf-apex/metrics`** | `packages/metrics` | **Prometheus 监控**（基于 Swoole Table 共享内存的低基数运行指标、请求耗时拦截与大屏） | `hyperf/memory`（Swoole Table） |
 | **`hyperf-apex/apex`** | 根目录元包 | **全家桶元包（Metapackage）**（聚合依赖上述全部 6 个独立包，开箱即用） | 聚合所有子包 |

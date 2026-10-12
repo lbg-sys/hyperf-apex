@@ -3,6 +3,74 @@
 本文件记录 `hyperf-apex/*` 各组件包的对外变更，格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [Unreleased]
+
+本段含破坏性变更。按语义化版本本应抬主版本号，但本套件刚发布 v4.0.1、尚无使用者，
+抬主版本意味着把 6 个包的包间约束与 branch-alias 全量改到 `^5.0` 并刷新 `composer.lock` ——
+对零使用者没有收益，因此随次版本发布（发布闸门以主版本为判据，v4.1.0 通过）。
+**此后**再做破坏性改动必须走主版本。
+
+### 破坏性变更
+
+- `Hyperf\Apex\WebSocket\Contract\WsConnectionStoreInterface` 的房间相关方法
+  （`joinRoom()` / `leaveRoom()` / `connectionsByRoom()` / `countRooms()`）迁到新增的
+  `Hyperf\Apex\WebSocket\Contract\WsRoomStoreInterface`。连接索引与房间索引的跨节点诉求本就不同
+  （fd 是单机概念，房间成员常常要跨节点），拆开后房间索引才能换成 Redis。自行实现连接索引的工程
+  需要去掉房间方法；换房间存储则改为实现新契约（组件内已提供 `table` 与 `redis` 两种实现）。
+- 构造签名新增依赖（均由容器自动装配，只有手工 `new` 的场景需要跟改）：`WsDispatcher`、
+  `WsPushService`、`WsGatewayController` 新增 `WsRoomStoreInterface`；
+  `Hyperf\Apex\Metrics\Collector\WebSocketGaugeCollector` 新增 `WsRoomStoreInterface`。
+- **房间名上限从 64 收到 63**：房间索引以房间名为键，而 `Swoole\Table` 的键上限固定 63 字节、
+  超长只截断不报错 —— 两个前 63 字节相同的房间名会静默落到同一行。
+- `websocket.*` 的默认值改由包内 `ConfigProvider` 下发（Hyperf 惯例：框架按
+  `array_merge_recursive(ConfigProvider 配置, config/autoload/*.php)` 合并，后者覆盖前者）。
+  没发布过配置的工程行为不变；**发布过配置、又删掉了某一项的工程**现在会回落到组件默认值
+  （此前会落到 0 或空 — 例如 `idle_timeout` 缺失等于关闭空闲回收）。
+- 「至少需要一个 `#[WsGateway]` 入口」不再是无条件启动失败：装了元包却不用长连接的应用
+  （`server.php` 里没有 WebSocket 服务）不再因此起不来；改为**配了 WebSocket 服务却没有任何入口**
+  时报错（客户端握手只会拿到 404，这是真的配错）。`api-doc:generate-apifox` 仍然拒绝导出空契约。
+
+### 新增
+
+- **房间成员索引支持 Redis**（`websocket.room_store_driver=redis`）：成员集合放 Redis，
+  多台网关共用一个房间时成员跨节点可见。「判重 + 判容量 + 写入」在单段 Lua 里完成，
+  跨节点并发订阅同一房间不会互相覆盖。`hyperf/redis` 是可选依赖（写进 `suggest`），
+  启动期会校验「选了 redis 驱动但没装客户端」并直接拦下。
+- `websocket.room_store_redis_pool` / `websocket.room_store_prefix`：Redis 房间索引的连接池与键前缀。
+- `Hyperf\Apex\WebSocket\Support\TableLimits`：Swoole\Table 的键/列/行上限与写入前断言。
+- 测试补齐：连接生命周期（`WsGatewayController`）、连接 id 编解码与会话（`WsSession`）、
+  握手鉴权与身份中转、房间索引的 table/redis 双实现与驱动选择、声明检查触发口径、
+  协议信封的线上形状、ConfigProvider 与发布模板的默认值一致性。
+
+### 修复
+
+- **空闲回收的豁免条件在协程服务器下不成立**：启动检查曾把 `server.settings.heartbeat_idle_time > 0`
+  当作 `websocket.idle_timeout=0` 的豁免，而该设置是 `Swoole\Server` 的、协程服务器
+  （`Swoole\Coroutine\Http\Server`）根本不认。于是一份「零回收」的配置可以通过启动检查，
+  定长连接表写满后新连接被直接拒绝且不自愈。现在只有传统 `Hyperf\Server\Server` 才认这个豁免。
+- **`WsGatewayController::resolveFd()` 的退化路径读错了 Context**：它读连接级 Context 的 `ws.fd`
+  这一格，而全仓库没有任何地方写过它 —— 退化路径恒得 0，把「拿不到 fd」变成「静默不建会话」。
+  改为读框架真正设置了 fd 的协程 Context。
+- **握手身份中转没有清理出口**：`WsHandshakeContext` 的 Principal 会在连接级 Context 里驻留
+  整个连接的生命周期，入口组装完会话后现在会清掉（上游 `Context::destroy()` 用扁平键删、
+  而写入走点号路径展开成嵌套数组，对带点的键删不到，因此这里置空而不是 destroy）。
+- **对外契约文档与配置漂移**：Apifox 渲染器硬编码「60 秒无数据超时」（实际默认 180），
+  且对所有入口都宣称「token 校验失败返回 401」（没挂鉴权中间件的入口是假契约）。现在分别改为
+  读 `websocket.idle_timeout` 与按入口的 `middlewares` 判定。
+- `idle_timeout` 的默认值曾分散在三处（模板 180 / 两个监听器 120 / 文档 60），统一到
+  ConfigProvider，并由用例断言发布模板与它一致。
+- 连接 id（`{server}:{fd}`）、用户类型、接入端标识超长时会被 Swoole 静默截断（截断后的连接 id
+  解析不出 fd、截断后的用户类型会让用户索引记录永远摘不掉），现在在写入前直接报错。
+- `WsConnectionStore::touch()` 用 `get()` 判断连接是否存在：每次入站消息都会把整行（含两个字符串
+  列）拷贝一遍，改为 `exist()`；`hasConnection()` 同理。`allConnections()` 补上与其它遍历方法一致的
+  非行数据守卫。
+- `WsConnectionRateLimiter` 在每条消息的路径上做了两次 `config->get()`（内部是 explode + 逐层取值），
+  改为构造期解析一次。
+- `WsPushService::pushToRoom()` 原本先遍历成员判活、再遍历投递，合并为一趟；
+  全员失效时不再编造信封。
+- `ApifoxDocumentBuilder` 在没有任何入口时直接报错，而不是产出空的 `webSocketCollection`
+  （导入方会把它读成「本来就没有长连接接口」）。
+
 ## [4.0.1] - 2026-10-12
 
 ### 新增

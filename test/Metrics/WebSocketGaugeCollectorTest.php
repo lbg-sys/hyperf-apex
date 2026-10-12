@@ -7,6 +7,7 @@ namespace Hyperf\Apex\Test\Metrics;
 use Hyperf\Apex\Metrics\Collector\GaugeSample;
 use Hyperf\Apex\Metrics\Collector\WebSocketGaugeCollector;
 use Hyperf\Apex\Test\WebSocket\Support\FakeWsConnectionStore;
+use Hyperf\Apex\Test\WebSocket\Support\FakeWsRoomStore;
 use Hyperf\Apex\WebSocket\Contract\WsConnectionStoreInterface;
 use Hyperf\Config\Config;
 use PHPUnit\Framework\TestCase;
@@ -25,10 +26,11 @@ final class WebSocketGaugeCollectorTest extends TestCase
         $store = new FakeWsConnectionStore();
         $store->connectionCount = 5;
         $store->userCount = 3;
-        $store->roomCount = 2;
         $store->idle = ['ws:1', 'ws:2'];
+        $roomStore = new FakeWsRoomStore();
+        $roomStore->roomCount = 2;
 
-        $samples = $this->collector($store, tableSize: 65536, idleTimeout: 180)->collect();
+        $samples = $this->collector($store, tableSize: 65536, idleTimeout: 180, roomStore: $roomStore)->collect();
 
         $this->assertSame(5, $this->valueOf($samples, 'core_ws_connections'));
         $this->assertSame(3, $this->valueOf($samples, 'core_ws_online_users'));
@@ -63,9 +65,13 @@ final class WebSocketGaugeCollectorTest extends TestCase
         $this->assertSame([], $this->collector($store, tableSize: 1024, idleTimeout: 60)->collect());
     }
 
-    private function collector(WsConnectionStoreInterface $store, int $tableSize, int $idleTimeout): WebSocketGaugeCollector
-    {
-        return new WebSocketGaugeCollector($store, new Config([
+    private function collector(
+        WsConnectionStoreInterface $store,
+        int $tableSize,
+        int $idleTimeout,
+        ?FakeWsRoomStore $roomStore = null,
+    ): WebSocketGaugeCollector {
+        return new WebSocketGaugeCollector($store, $roomStore ?? new FakeWsRoomStore(), new Config([
             'websocket' => [
                 'table_size' => $tableSize,
                 'idle_timeout' => $idleTimeout,

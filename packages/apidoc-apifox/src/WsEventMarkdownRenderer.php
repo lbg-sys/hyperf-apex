@@ -9,10 +9,12 @@ use Hyperf\Apex\DTO\Schema\SchemaFragment;
 use Hyperf\Apex\Enum\ErrorCode;
 use Hyperf\Apex\Support\ClassNamePattern;
 use Hyperf\Apex\Support\StringList;
+use Hyperf\Apex\WebSocket\Auth\WsIntegrationHandshakeMiddleware;
 use Hyperf\Apex\WebSocket\Definition\WsGatewayDefinition;
 use Hyperf\Apex\WebSocket\Definition\WsRouteDefinition;
 use Hyperf\Apex\WebSocket\Protocol\WsBuiltinEvent;
 use Hyperf\Apex\WebSocket\Registry\WsHandlerRegistry;
+use Hyperf\Apex\WebSocket\Support\RoomName;
 use Hyperf\Contract\ConfigInterface;
 use stdClass;
 
@@ -64,15 +66,28 @@ final class WsEventMarkdownRenderer
 
     private function header(WsGatewayDefinition $gateway): string
     {
-        return implode("\n", [
+        $lines = [
             '## ' . $gateway->displayName(),
             '',
             '- 连接路径：`' . $gateway->path . '`（host 与 scheme 由 Apifox 环境决定，`ws://` 或 `wss://`）',
             '- 接入端标识：`' . $gateway->endpoint . '`（服务端推送寻址用，客户端不感知）',
-            '- 握手鉴权：`token` 通过 query 参数或 `Sec-WebSocket-Protocol` 子协议传递；'
-                . '校验失败返回 401，连接不建立',
-            '- 心跳：服务端 60 秒无数据判定超时并关闭连接，客户端应在超时前发 `sys.ping`',
-        ]);
+        ];
+
+        // 只有入口真的挂了集成握手中间件才写这一段：对所有入口都宣称「token 校验失败返回 401」，
+        // 对没挂鉴权的入口就是一份假契约（客户端会去传一个没人看的 token）。
+        if (in_array(WsIntegrationHandshakeMiddleware::class, $gateway->middlewares, true)) {
+            $lines[] = '- 握手鉴权：`token` 通过 query 参数或 `Sec-WebSocket-Protocol` 子协议传递；'
+                . '校验失败返回 401，连接不建立';
+        }
+
+        // 超时时间是跑出来的配置而不是常量：写死「60 秒」而 idle_timeout 实际是 180 时，
+        // 客户端会按错误的节奏发心跳。
+        $idleTimeout = (int) $this->config->get('websocket.idle_timeout');
+        $lines[] = $idleTimeout > 0
+            ? sprintf('- 心跳：服务端 %d 秒无数据判定超时并关闭连接，客户端应在超时前发 `sys.ping`', $idleTimeout)
+            : '- 心跳：服务端未启用空闲回收，连接不会因为没有数据而被服务端关闭';
+
+        return implode("\n", $lines);
     }
 
     private function envelopeSection(): string
@@ -113,7 +128,7 @@ final class WsEventMarkdownRenderer
             ...$rows,
             '',
             '`sys.subscribe` / `sys.unsubscribe` 的 data 为 `{ "room": "<房间名>" }`，'
-                . '房间名限 1-64 位字母、数字与 `_ . : -`。',
+                . '房间名限 ' . RoomName::RULE . '。',
         ]);
     }
 
