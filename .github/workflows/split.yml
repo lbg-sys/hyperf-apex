@@ -26,8 +26,25 @@ permissions:
   contents: read
 
 jobs:
+  # 发布前的第一道闸：包间约束与 branch-alias 的主版本必须与本次 tag 一致。
+  # 起因是 v3.0.0 —— tag 打了，但 6 个包的 hyperf-apex/* 约束还停在 ^2.0、branch-alias
+  # 还写着 2.0.x-dev，于是「装 3.x 的包会解析到 2.x 的 core」只在正式 tag 上才暴露。
+  verify:
+    name: 校验版本一致性
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出目标 tag
+        uses: actions/checkout@v4
+        with:
+          # 显式指定目标 tag：手动重跑历史 tag 时，默认检出的是所选分支 ——
+          # 拿「今天的分支配置」去比「当年的 tag」必然误报。
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+      - name: 校验包间约束与 branch-alias 的主版本
+        run: php .github/scripts/verify-package-versions.php "${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}"
+
   split:
     name: 推送 ${{ matrix.package }} 只读仓
+    needs: verify
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
