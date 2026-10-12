@@ -9,6 +9,7 @@ use Hyperf\Apex\ApiDoc\Attribute\FileField;
 use Hyperf\Apex\ApiDoc\Builder\RequestBuilder;
 use Hyperf\Apex\ApiDoc\Compiler\SchemaFragmentTranslator;
 use Hyperf\Apex\ApiDoc\DTOSchemaFactory;
+use Hyperf\Apex\DTO\Attribute\ArrayOf;
 use Hyperf\Apex\DTO\Attribute\FieldDescription;
 use Hyperf\Apex\DTO\Attribute\Minimum;
 use Hyperf\Apex\Http\ArgumentResolver\Attribute\FromBody;
@@ -95,9 +96,19 @@ final class RequestBuilderTest extends TestCase
         $this->assertTrue($parameters[1]->schema->nullable);
     }
 
-    public function testArrayQueryParameterGetsBracketSyntaxHint(): void
+    public function testLooseArrayQueryParameterIsRejected(): void
     {
-        $parameters = $this->build('arrayQuery')['parameters'];
+        // 散装数组参数没有地方声明元素类型，只能产出没有 items 的 type: array ——
+        // 那在上游是 warning，会让整个生成命令失败，报的还是一条与业务代码无关的提示。
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('数组参数必须有元素类型');
+
+        $this->build('arrayQuery');
+    }
+
+    public function testArrayPropertyInQueryDtoGetsBracketSyntaxHint(): void
+    {
+        $parameters = $this->build('arrayQueryDto')['parameters'];
 
         $this->assertSame('array', $parameters[0]->schema->type);
         // OpenAPI 的 style/explode 表达不了 PHP 的方括号数组语法，所以把真实格式写进说明。
@@ -307,6 +318,10 @@ final class RequestBuilderFixture
     {
     }
 
+    public function arrayQueryDto(#[FromQuery] ArrayQueryFixtureDTO $query): void
+    {
+    }
+
     public function bodyDto(#[FromBody] BodyFixtureDTO $body): void
     {
     }
@@ -369,6 +384,17 @@ final readonly class OtherQueryFixtureDTO
     public function __construct(
         #[FieldDescription('关键词')]
         public string $keyword = '',
+    ) {
+    }
+}
+
+/** 数组属性由 #[ArrayOf] 声明元素类型：这是表达数组参数的正确方式。 */
+final readonly class ArrayQueryFixtureDTO
+{
+    /** @param list<string> $codes */
+    public function __construct(
+        #[ArrayOf('string')]
+        public array $codes = [],
     ) {
     }
 }

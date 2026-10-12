@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hyperf\Apex\ApiDoc\Apifox\Command;
 
 use Hyperf\Apex\ApiDoc\Apifox\ApifoxDocumentBuilder;
+use Hyperf\Apex\ApiDoc\Support\ApiDocPaths;
 use Hyperf\Command\Annotation\Command;
 use Hyperf\Command\Command as HyperfCommand;
 use Hyperf\Contract\ConfigInterface;
@@ -42,7 +43,7 @@ final class GenerateApifoxDocCommand extends HyperfCommand
             return self::FAILURE;
         }
 
-        $path = $directory . '/apifox.json';
+        $path = ApiDocPaths::outputFile($this->config, ApiDocPaths::APIFOX_FILE);
         file_put_contents($path, $json . PHP_EOL);
         $this->info('Apifox 文档已生成：' . $path);
 
@@ -50,16 +51,11 @@ final class GenerateApifoxDocCommand extends HyperfCommand
     }
 
     /**
-     * 产物目录。默认 `BASE_PATH/runtime/api-doc`，与 OpenAPI 生成命令共用 `api_doc.output_path`。
+     * 产物目录。默认 `BASE_PATH/runtime/api-doc`，与 OpenAPI 生成命令共用 `api_doc.output_path`
+     * （解析逻辑统一在 ApiDocPaths，与对外出口也是同一份）。
      */
     private function outputPath(): string
     {
-        $value = $this->config->get('api_doc.output_path');
-        if (is_string($value) && $value !== '') {
-            return rtrim($value, '/');
-        }
-
-        // BASE_PATH 由应用引导脚本定义，只有真的要用默认值时才读它。
-        return BASE_PATH . '/runtime/api-doc';
+        return ApiDocPaths::outputDirectory($this->config);
     }
 }

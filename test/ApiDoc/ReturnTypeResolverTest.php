@@ -65,6 +65,18 @@ final class ReturnTypeResolverTest extends TestCase
         $this->assertSame('#/components/schemas/DocblockAliasItemDTO', $this->items($fragment)->get('ref'));
     }
 
+    public function testDocblockTrailingDescriptionIsNotPartOfTheType(): void
+    {
+        // 注释里的说明文字不能被当成类型的一部分：`FooDTO[] 列表` 曾会退化成「类名是
+        // FooDTO[] 列表」的叶子，`list<FooDTO> 列表` 只是靠泛型解析的贪婪匹配侥幸能用。
+        foreach (['arrayWithDescribedDocblock', 'arrayWithSuffixedDocblock'] as $method) {
+            $fragment = $this->fragment($method);
+
+            $this->assertSame('array', $fragment->get('type'), $method);
+            $this->assertSame('#/components/schemas/DocblockAliasItemDTO', $this->items($fragment)->get('ref'), $method);
+        }
+    }
+
     public function testArrayReturnWithShapeDocblockDegradesToPlainArray(): void
     {
         // array{...} 形状无法归约成元素类型，但「它是数组」这层信息是可靠的。
@@ -222,6 +234,18 @@ final class ReturnTypeFixture
 
     /** @return array{name: string} */
     public function arrayWithShapeDocblock(): array
+    {
+        return [];
+    }
+
+    /** @return list<DocblockAlias> 条目列表 */
+    public function arrayWithDescribedDocblock(): array
+    {
+        return [];
+    }
+
+    /** @return DocblockAlias[] 条目列表 */
+    public function arrayWithSuffixedDocblock(): array
     {
         return [];
     }

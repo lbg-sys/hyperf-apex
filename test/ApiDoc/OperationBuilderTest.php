@@ -96,15 +96,24 @@ final class OperationBuilderTest extends TestCase
         $this->assertSame('读取条目', $operation->x['apifox-name'] ?? null);
     }
 
-    public function testSummaryFallsBackToMethodNameAndOptionalExtensionsAreOmitted(): void
+    public function testMissingApiOperationIsRejected(): void
+    {
+        // 不退回方法名：文档里会出现一串英文方法名，看起来「有名字」但没人知道它是什么，
+        // 而且漏写这件事永远不会被发现。接口名与分组属于文档契约，必须在生成期要求。
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('必须用 #[ApiOperation');
+
+        $this->build(MissingApiOperationFixture::class);
+    }
+
+    public function testOptionalExtensionsAreOmittedWhenNotDeclared(): void
     {
         $operation = $this->single('no_params');
 
-        $this->assertSame('noParameters', $operation->summary);
-        // 没写 description / tags 的不该出现空的占位值。
+        // 没写 description 的不该出现空的占位值。
         $this->assertNull($operation->description);
-        $this->assertNull($operation->tags);
         $this->assertArrayNotHasKey('required-permissions', $operation->x);
+        $this->assertArrayNotHasKey('required-roles', $operation->x);
     }
 
     public function testHeaderParametersComeBeforeQueryParameters(): void
@@ -232,14 +241,27 @@ final class OperationFixture
     }
 
     #[PublicAccess]
+    #[ApiOperation(summary: '无参数接口', tags: ['甲'])]
     #[GetMapping(path: 'no_params')]
     public function noParameters(): void
     {
     }
 
     #[PublicAccess]
+    #[ApiOperation(summary: '多方法接口', tags: ['甲'])]
     #[RequestMapping(path: 'multi', methods: ['GET', 'POST'])]
     public function multi(): void
+    {
+    }
+}
+
+/** 故意漏写 #[ApiOperation]：生成期必须拒绝，而不是退回方法名。 */
+#[Controller(prefix: '/op')]
+final class MissingApiOperationFixture
+{
+    #[PublicAccess]
+    #[GetMapping(path: 'missing_operation')]
+    public function missingOperation(): void
     {
     }
 }
