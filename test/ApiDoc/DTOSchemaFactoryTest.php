@@ -13,6 +13,7 @@ use Hyperf\Apex\DTO\Attribute\Format;
 use Hyperf\Apex\DTO\Attribute\IntAsString;
 use Hyperf\Apex\DTO\Attribute\Length;
 use Hyperf\Apex\DTO\Attribute\MapOf;
+use Hyperf\Apex\DTO\Attribute\PropertyCount;
 use Hyperf\Apex\DTO\Schema\SchemaFragment;
 use Hyperf\Apex\Enum\Interface\EnumInterface;
 use Hyperf\Apex\Enum\Traits\EnumTrait;
@@ -101,9 +102,29 @@ final class DTOSchemaFactoryTest extends TestCase
     public function testConflictingKeywordsAreRejected(): void
     {
         $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('同一个 Schema 关键字 format');
+        $this->expectExceptionMessage('都在写 Schema 关键字 format');
 
         $this->properties(ConflictingFormatDTO::class);
+    }
+
+    public function testArrayOfWithShortClassNameIsRejected(): void
+    {
+        // 字符串里的类名不经过 use 解析：'list<BarDTO>' 拿不到命名空间。此前它静默落成
+        // items: {type: string}，而校验（按对象展开）与水合（按对象转型）都不这么认为。
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('类请写完整类名');
+
+        $this->properties(ShortNameArrayDTO::class);
+    }
+
+    public function testSameKeywordWithSameValueIsNotAConflict(): void
+    {
+        // #[MapOf] 与 #[PropertyCount] 都写 type: object，值一致 —— 产出与声明顺序无关，
+        // 不该按「重复写关键字」拦下（此前只看关键字是否出现过，同值也报）。
+        $properties = $this->properties(MapWithPropertyCountDTO::class);
+
+        $this->assertSame('object', $properties['scores']->get('type'));
+        $this->assertSame(1, $properties['scores']->get('minProperties'));
     }
 
     public function testKeywordThatDoesNotMatchTypeIsRejected(): void
@@ -273,6 +294,29 @@ final readonly class DefaultValueDTO
     public function __construct(
         public string $name = 'x',
         public ?string $note = null,
+    ) {
+    }
+}
+
+/** 内层只写短类名：拿不到命名空间，必须在生成期拒绝。 */
+final readonly class ShortNameArrayDTO
+{
+    public function __construct(
+        #[FieldDescription('条目')]
+        #[ArrayOf('ResolverItemDTO')]
+        public array $items = [],
+    ) {
+    }
+}
+
+/** 两个 Attribute 写同一个关键字但值一致：不是冲突。 */
+final readonly class MapWithPropertyCountDTO
+{
+    /** @param array<string, int> $scores */
+    public function __construct(
+        #[MapOf('int')]
+        #[PropertyCount(min: 1)]
+        public array $scores = [],
     ) {
     }
 }

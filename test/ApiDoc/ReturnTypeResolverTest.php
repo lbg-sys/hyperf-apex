@@ -131,7 +131,7 @@ final class ReturnTypeResolverTest extends TestCase
     public function testPropertyItemTypeOnMissingPropertyIsRejected(): void
     {
         $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage(sprintf('Response property %s::nonexistent does not exist.', ResolverItemDTO::class));
+        $this->expectExceptionMessage('里没有属性 nonexistent，但被声明了数组元素类型');
 
         $this->fragment('propertyMissing');
     }
@@ -139,7 +139,7 @@ final class ReturnTypeResolverTest extends TestCase
     public function testPropertyItemTypeOnNonArrayPropertyIsRejected(): void
     {
         $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage(sprintf('Response property %s::name must be an array.', ResolverItemDTO::class));
+        $this->expectExceptionMessage('其属性 name 不是数组，无法声明元素类型');
 
         $this->fragment('propertyNotArray');
     }
@@ -148,7 +148,7 @@ final class ReturnTypeResolverTest extends TestCase
     {
         // 同一个属性声明两次元素类型时结果取决于顺序，必须报错而不是挑一个。
         $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('has multiple array item types.');
+        $this->expectExceptionMessage('被多次声明数组元素类型');
 
         $this->fragment('propertyDuplicated');
     }

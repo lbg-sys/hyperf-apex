@@ -58,9 +58,16 @@ final class DTORuleFactory
         return $rules;
     }
 
-    /** @return array<string, list<object|string>> */
-    private static function rulesForClass(string $class, string $prefix = ''): array
+    /**
+     * @param array<class-string, true> $expanding 当前展开路径上的类名（环形引用的刹车）
+     * @return array<string, list<object|string>>
+     */
+    private static function rulesForClass(string $class, string $prefix = '', array $expanding = []): array
     {
+        // 记下「我在展开自己」：自引用（A 的元素是 A）与互相引用（A↔B）会让 itemRules 的
+        // $key 每层变长、永不收敛，首个请求就栈溢出或把内存撑爆。
+        $expanding[$class] = true;
+
         $rules = [];
         foreach (DTOMetadataFactory::from($class)->properties as $propertyName => $property) {
             $name = $prefix . $propertyName;
@@ -80,7 +87,7 @@ final class DTORuleFactory
             $rules[$name] = $fieldRules;
             if ($property->itemType !== null) {
                 $key = $name . '.*';
-                $itemRules = self::itemRules($key, $property->itemType);
+                $itemRules = self::itemRules($key, $property->itemType, $expanding);
                 foreach ($property->itemAttributes as $attribute) {
                     $instance = $attribute->newInstance();
                     array_push($itemRules[$key], ...$instance->itemValidationRules());
@@ -97,18 +104,25 @@ final class DTORuleFactory
      * 这里必须用 parseOrLeaf()：本方法在 HTTP 请求热路径上执行，
      * 不认识的类型写法要退化成今天的兜底行为，而不是抛异常变成 500。
      *
+     * @param array<class-string, true> $expanding 当前展开路径上的类名
      * @return array<string, list<object|string>>
      */
-    private static function itemRules(string $key, TypeExpression $expression): array
+    private static function itemRules(string $key, TypeExpression $expression, array $expanding = []): array
     {
         if (! $expression->isLeaf()) {
-            return [$key => ['array']] + self::itemRules($key . '.*', $expression->item);
+            return [$key => ['array']] + self::itemRules($key . '.*', $expression->item, $expanding);
         }
 
         $itemType = $expression->name;
-        $rules = [$key => class_exists($itemType) ? ['array'] : self::typeRule($itemType)];
+        if (! class_exists($itemType)) {
+            return [$key => self::typeRule($itemType)];
+        }
 
-        return class_exists($itemType) ? $rules + self::rulesForClass($itemType, $key . '.') : $rules;
+        $rules = [$key => ['array']];
+
+        // 已经在展开路径上出现过：再展开就是无限递归。停下之后只剩「元素必须是对象」这一条，
+        // 与文档一致 —— schema 侧用 $ref 表达，本来也不会展开成多层。
+        return isset($expanding[$itemType]) ? $rules : $rules + self::rulesForClass($itemType, $key . '.', $expanding);
     }
 
     /**
@@ -132,8 +146,13 @@ final class DTORuleFactory
             'string' => ['string'],
             'bool', 'boolean' => [new BooleanValueRule()],
             'float', 'number', 'numeric' => ['numeric'],
-            'array' => ['array'],
-            default => ['array'],
+            'array', 'iterable' => ['array'],
+            // mixed / object / void / null 与不认识的名字：不加类型规则。
+            // 它们此前全部落到 default 的 ['array'] —— mixed 属性因此被要求「必须是数组」，
+            // 而文档（无约束）与水合（原样透传）都不这么认为，三层结论互相打架。
+            'mixed', 'object', 'callable', 'void', 'null' => [],
+            // 剩下的才可能是嵌套 DTO 的类名：JSON 里必须是对象形态。
+            default => class_exists($type) ? ['array'] : [],
         };
     }
 }

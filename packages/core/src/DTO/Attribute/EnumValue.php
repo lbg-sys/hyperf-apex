@@ -31,7 +31,11 @@ final class EnumValue implements ValidationRuleAttribute, SchemaAttribute
     public function fragment(): SchemaFragment
     {
         if (! is_a($this->enum, EnumInterface::class, true)) {
-            throw new InvalidArgumentException(sprintf('%s must implement %s.', $this->enum, EnumInterface::class));
+            throw new InvalidArgumentException(sprintf(
+                '%s 必须实现 %s：枚举字段的类必须是带 #[Message] 的 backed enum。',
+                $this->enum,
+                EnumInterface::class
+            ));
         }
 
         $cases = $this->enum::cases();
