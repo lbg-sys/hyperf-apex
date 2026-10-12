@@ -176,7 +176,7 @@ final class IdempotencyMiddlewareTest extends TestCase
     {
         $responses = new ApiResponseFactory(new Config(['response' => ['response_dto' => ApiResponseDTO::class]]));
         $context = new FakePrincipalContext();
-        $context->set(new Principal(userId: 1, tenantId: null, agentId: null, userType: 'user', username: 'alice', sessionId: 's-1'));
+        $context->set(new Principal(userId: 1, userType: 'user', username: 'alice', sessionId: 's-1'));
 
         return new IdempotencyMiddleware(
             new HandlerMethodResolver(),

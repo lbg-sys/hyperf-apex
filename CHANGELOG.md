@@ -5,6 +5,23 @@
 
 ## [Unreleased]
 
+本次为破坏性版本：清除从多端 SaaS 业务工程带入组件库的租户 / 代理商 / 系统端领域概念，组件只保留中性机制。
+应用侧升级前请先读「破坏性变更」。
+
+### 破坏性变更
+
+- `Hyperf\Apex\Security\Principal` 移除 `$tenantId` / `$agentId` 两个业务维度，构造参数变为
+  `(int $userId, string $userType, string $username, string $sessionId, int $permissionVersion = 1, array $claims = [])`。
+  应用自己的数据范围、组织、渠道等维度改放进 `$claims`，组件不解释其内容。
+- 删除 `#[RequireSystemPermission]` 与 `#[RequireAgentPermission]`：这两个注解把「系统端 / 代理端」固化进了组件，
+  且无任何运行时消费者。统一改用 `#[RequirePermission]`；需要区分多套权限体系时用 `#[RequirePermission(guard: '...')]` 自行标注。
+- `Hyperf\Apex\Security\AccessDeclaration` 移除 `$tenantCodes` / `$systemCodes` / `$agentCodes` 兼容字段与
+  `permissionNamespace()`、`isContradictory()` 方法，权限码统一收敛到 `$permissions`。
+- `Hyperf\Apex\Security\Contract\RoleAssignerInterface::assignBuiltinRole()` 移除 `?int $tenantId` 参数，
+  签名变为 `(int $userId, string $userType): void`。
+- `Hyperf\Apex\WebSocket\Registry\WsConnectionStore` 的连接表移除 `tenant_id` 列（此前只写入、从不读出）。
+  共享内存表在启动时重建，重启进程即生效，不涉及数据库迁移。
+
 ## [2.0.0] - 2026-10-10
 
 本次为破坏性版本：解除 `hyperf-apex/apidoc` 对 websocket / reliability 的硬依赖，并把限流、幂等中间件

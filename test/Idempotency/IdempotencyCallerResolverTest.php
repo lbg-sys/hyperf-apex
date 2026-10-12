@@ -23,7 +23,7 @@ final class IdempotencyCallerResolverTest extends TestCase
     public function testDeclaredCallerWins(): void
     {
         $context = new FakePrincipalContext();
-        $context->set(new Principal(userId: 1, tenantId: null, agentId: null, userType: 'user', username: 'alice', sessionId: 's-1'));
+        $context->set(new Principal(userId: 1, userType: 'user', username: 'alice', sessionId: 's-1'));
 
         $resolver = new IdempotencyCallerResolver($context);
 
@@ -36,7 +36,7 @@ final class IdempotencyCallerResolverTest extends TestCase
     public function testPrincipalUserIsUsed(): void
     {
         $context = new FakePrincipalContext();
-        $context->set(new Principal(userId: 42, tenantId: null, agentId: null, userType: 'user', username: 'alice', sessionId: 's-1'));
+        $context->set(new Principal(userId: 42, userType: 'user', username: 'alice', sessionId: 's-1'));
 
         $resolver = new IdempotencyCallerResolver($context);
 

@@ -44,7 +44,7 @@
 ## 控制器与访问声明
 
 - 本仓库的控制器放在 `packages/{package}/src/Controller/`，路由由包内 `ConfigProvider` 的 `annotations.scan.paths` 注册；控制器是**运行时能力**，与「是否进业务接口文档」无关（见「OpenAPI 文档规范」）。
-- 权限归属（平台系统管理端 / 租户端 / 集成方）是应用侧的组织方式，本仓库只提供机制：`#[RequirePermission]`、`#[RequireSystemPermission]`、`#[RequireRole]`、`#[PublicAccess]`、`#[Authenticated]`、`#[IntegrationAccess]`。组件不替应用决定某个端该用哪种权限。
+- 权限归属（哪个端、哪套权限体系）是应用侧的组织方式，本仓库只提供机制：`#[RequirePermission]`、`#[RequireRole]`、`#[PublicAccess]`、`#[Authenticated]`、`#[IntegrationAccess]`。组件不替应用决定某个端该用哪种权限；应用需要区分多套权限体系时，用 `#[RequirePermission(guard: '...')]` 自行标注命名空间。
 - 组件自己的端点必须显式声明访问口径，不留「没标注就等于没人管」的中间态：对外文档端点是 `#[PublicAccess]`（是否真正对外由部署网络与网关决定），需要身份的端点用 `#[Authenticated]`，只允许运维来源的端点用来源白名单（如 metrics 的 `allow_ips`）。
 - 新增不鉴权的端点，必须在 README 与配置注释里写明「为什么不鉴权、靠什么限制来源」。
 
@@ -158,7 +158,7 @@
 - 请求 Schema 从方法参数上的请求 DTO 自动生成；响应外层结构由 `ApiResponseDTO` 中唯一标记 `#[ResponsePayload]` 的属性确定。
 - 文件上传用方法级 `#[FileField('file', '待上传的文件')]` 声明表单里的文件字段——文件不经过 DTO（Service 从 `RequestInterface::file()` 取），类型系统里没有痕迹，必须显式声明。
 - 组件名取 DTO 短类名。不同命名空间的同名 DTO 会在生成时直接报错，需要重命名其中之一，不允许靠加前缀绕开。
-- operationId 由「HTTP 方法 + URL path」确定性派生（如 `post_api_visibility_admin_account_devices_bind`），**不取自控制器短类名**。唯一性继承自 OpenAPI 对 `(path, method)` 的全局唯一要求：不同端（Admin / Integration / 租户端等）出现同名控制器不再需要重命名避让，客户端标识跟随 URL 走，控制器改名或挪目录不会破坏已发布文档。
+- operationId 由「HTTP 方法 + URL path」确定性派生（如 `post_api_visibility_admin_account_devices_bind`），**不取自控制器短类名**。唯一性继承自 OpenAPI 对 `(path, method)` 的全局唯一要求：不同端（如 Admin 端与集成端）出现同名控制器不再需要重命名避让，客户端标识跟随 URL 走，控制器改名或挪目录不会破坏已发布文档。
 - 生成命令在应用内执行：`swoole62 bin/hyperf.php api-doc:generate`（本仓库不提供控制台入口）。生成时会跑规格校验，**任何 error 或 warning 都会让命令失败**——上游把「`type: array` 但没有 `items`」这类骗人的文档归到 warning，放过它等于放过一份说了谎的契约。
 - 编译器自带的 `validate()` 只做 5 项检查（`info`/`info.title` 存在、components 非空、license 字段互斥、`type: array` 缺 items、requestBody 用在不支持的方法上）。悬空 `$ref`、孤儿组件、`operationId` 重复、响应是否覆盖真实错误路径它都不管，这些由生成器自己的构建期断言和 `test/` 下的测试负责。
 - 生成文件为 `runtime/api-doc/openapi.json`。

@@ -8,15 +8,15 @@ namespace Hyperf\Apex\Security;
  * 接口的访问声明，由控制器上的 Attribute 解析而来。
  *
  * 描述访问入口凭证策略（公开 / 集成凭证 / API 密钥 / 登录鉴权）以及细粒度权限码和角色要求。
+ * 权限码只是不透明的字符串标识，组件不预设任何命名空间或层级含义；`$guard` 供应用标注
+ * 自己区分的多套权限体系，组件原样透传。
  */
 final readonly class AccessDeclaration
 {
     /**
      * @param list<string> $permissions 需要的权限码标识列表
      * @param list<string> $roles 需要的角色标识列表
-     * @param list<string> $tenantCodes 兼容字段：租户端权限码列表
-     * @param list<string> $systemCodes 兼容字段：系统端权限码列表
-     * @param list<string> $agentCodes 兼容字段：代理端权限码列表
+     * @param null|string $guard 权限所属的守卫标识，取值由应用自行定义
      */
     public function __construct(
         public bool $public = false,
@@ -26,9 +26,6 @@ final readonly class AccessDeclaration
         public array $permissions = [],
         public array $roles = [],
         public ?string $guard = null,
-        public array $tenantCodes = [],
-        public array $systemCodes = [],
-        public array $agentCodes = [],
     ) {
     }
 
@@ -42,23 +39,7 @@ final readonly class AccessDeclaration
             || $this->apiKey
             || $this->authenticated
             || $this->permissions !== []
-            || $this->roles !== []
-            || $this->tenantCodes !== []
-            || $this->systemCodes !== []
-            || $this->agentCodes !== [];
-    }
-
-    /**
-     * 是否声明了互相矛盾的多端权限体系。
-     */
-    public function isContradictory(): bool
-    {
-        $namespaces = 0;
-        foreach ([$this->tenantCodes !== [], $this->systemCodes !== [], $this->agentCodes !== []] as $declared) {
-            $namespaces += $declared ? 1 : 0;
-        }
-
-        return $namespaces > 1;
+            || $this->roles !== [];
     }
 
     /**
@@ -74,27 +55,7 @@ final readonly class AccessDeclaration
      */
     public function requiresPermission(): bool
     {
-        return $this->permissions !== []
-            || $this->tenantCodes !== []
-            || $this->systemCodes !== []
-            || $this->agentCodes !== [];
-    }
-
-    /**
-     * 声明的权限所属身份/守卫类型，未声明时为 null。
-     */
-    public function permissionNamespace(): ?string
-    {
-        if ($this->guard !== null) {
-            return $this->guard;
-        }
-
-        return match (true) {
-            $this->systemCodes !== [] => 'system',
-            $this->tenantCodes !== [] => 'tenant',
-            $this->agentCodes !== [] => 'agent',
-            default => null,
-        };
+        return $this->permissions !== [];
     }
 
     /**
@@ -104,13 +65,6 @@ final readonly class AccessDeclaration
      */
     public function requiredCodeValues(): array
     {
-        $all = [
-            ...$this->permissions,
-            ...$this->tenantCodes,
-            ...$this->systemCodes,
-            ...$this->agentCodes,
-        ];
-
-        return array_values(array_unique($all));
+        return array_values(array_unique($this->permissions));
     }
 }

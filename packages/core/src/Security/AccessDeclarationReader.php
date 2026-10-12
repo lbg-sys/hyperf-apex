@@ -8,10 +8,8 @@ use Hyperf\Apex\Security\Attribute\ApiKeyAccess;
 use Hyperf\Apex\Security\Attribute\Authenticated;
 use Hyperf\Apex\Security\Attribute\IntegrationAccess;
 use Hyperf\Apex\Security\Attribute\PublicAccess;
-use Hyperf\Apex\Security\Attribute\RequireAgentPermission;
 use Hyperf\Apex\Security\Attribute\RequirePermission;
 use Hyperf\Apex\Security\Attribute\RequireRole;
-use Hyperf\Apex\Security\Attribute\RequireSystemPermission;
 use ReflectionAttribute;
 use ReflectionMethod;
 
@@ -41,9 +39,6 @@ final class AccessDeclarationReader
         $authenticated = false;
         $permissions = [];
         $roles = [];
-        $tenantCodes = [];
-        $systemCodes = [];
-        $agentCodes = [];
         $guard = null;
 
         foreach ($attributes as $attribute) {
@@ -68,15 +63,6 @@ final class AccessDeclarationReader
                     }
                     if ($instance->guard !== null) {
                         $guard = $instance->guard;
-                        if ($guard === 'system') {
-                            $systemCodes = array_merge($systemCodes, $instance->permissions);
-                        } elseif ($guard === 'agent') {
-                            $agentCodes = array_merge($agentCodes, $instance->permissions);
-                        } else {
-                            $tenantCodes = array_merge($tenantCodes, $instance->permissions);
-                        }
-                    } else {
-                        $tenantCodes = array_merge($tenantCodes, $instance->permissions);
                     }
                     break;
                 case RequireRole::class:
@@ -89,24 +75,6 @@ final class AccessDeclarationReader
                         $guard = $instance->guard;
                     }
                     break;
-                case RequireSystemPermission::class:
-                    /** @var RequireSystemPermission $instance */
-                    $instance = $attribute->newInstance();
-                    foreach ($instance->permissions as $p) {
-                        $permissions[] = $p;
-                        $systemCodes[] = $p;
-                    }
-                    $guard = 'system';
-                    break;
-                case RequireAgentPermission::class:
-                    /** @var RequireAgentPermission $instance */
-                    $instance = $attribute->newInstance();
-                    foreach ($instance->permissions as $p) {
-                        $permissions[] = $p;
-                        $agentCodes[] = $p;
-                    }
-                    $guard = 'agent';
-                    break;
             }
         }
 
@@ -118,9 +86,6 @@ final class AccessDeclarationReader
             permissions: array_values(array_unique($permissions)),
             roles: array_values(array_unique($roles)),
             guard: $guard,
-            tenantCodes: array_values(array_unique($tenantCodes)),
-            systemCodes: array_values(array_unique($systemCodes)),
-            agentCodes: array_values(array_unique($agentCodes)),
         );
     }
 }

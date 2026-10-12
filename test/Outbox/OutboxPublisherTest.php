@@ -18,7 +18,7 @@ final class OutboxPublisherTest extends TestCase
     {
         $repository = new FakeOutboxEventRepository();
         $result = $this->publisher($repository)->publish(
-            new FakeOutboxEvent('order.paid', 'tenant:1', 'order-1', ['orderId' => 1])
+            new FakeOutboxEvent('order.paid', 'scope:1', 'order-1', ['orderId' => 1])
         );
 
         $this->assertTrue($result->created);
@@ -27,7 +27,7 @@ final class OutboxPublisherTest extends TestCase
         $this->assertNotNull($row);
         $this->assertSame(OutboxEventStatus::PENDING->value, $row['status']);
         $this->assertSame('order.paid', $row['event_type']);
-        $this->assertSame('tenant:1', $row['scope_key']);
+        $this->assertSame('scope:1', $row['scope_key']);
         $this->assertSame(8, $row['max_attempts']);
         $this->assertSame(0, $row['attempt_count']);
         $this->assertSame(
@@ -41,11 +41,11 @@ final class OutboxPublisherTest extends TestCase
         $repository = new FakeOutboxEventRepository();
         $publisher = $this->publisher($repository);
 
-        $first = $publisher->publish(new FakeOutboxEvent('order.paid', 'tenant:1', 'order-1', [
+        $first = $publisher->publish(new FakeOutboxEvent('order.paid', 'scope:1', 'order-1', [
             'amount' => 100,
             'buyer' => ['id' => 7, 'name' => '甲'],
         ]));
-        $second = $publisher->publish(new FakeOutboxEvent('order.paid', 'tenant:1', 'order-1', [
+        $second = $publisher->publish(new FakeOutboxEvent('order.paid', 'scope:1', 'order-1', [
             'buyer' => ['name' => '甲', 'id' => 7],
             'amount' => 100,
         ]));
@@ -61,12 +61,12 @@ final class OutboxPublisherTest extends TestCase
         $repository = new FakeOutboxEventRepository();
         $publisher = $this->publisher($repository);
 
-        $publisher->publish(new FakeOutboxEvent('order.paid', 'tenant:1', 'order-1', ['amount' => 100]));
+        $publisher->publish(new FakeOutboxEvent('order.paid', 'scope:1', 'order-1', ['amount' => 100]));
 
         $this->expectException(BusinessException::class);
         $this->expectExceptionMessage('相同幂等键对应的事件载荷不同。');
 
-        $publisher->publish(new FakeOutboxEvent('order.paid', 'tenant:1', 'order-1', ['amount' => 999]));
+        $publisher->publish(new FakeOutboxEvent('order.paid', 'scope:1', 'order-1', ['amount' => 999]));
     }
 
     public function testEventTypeMaxAttemptsOverrideWins(): void
@@ -74,8 +74,8 @@ final class OutboxPublisherTest extends TestCase
         $repository = new FakeOutboxEventRepository();
         $publisher = $this->publisher($repository, ['order.paid' => 3]);
 
-        $overridden = $publisher->publish(new FakeOutboxEvent('order.paid', 'tenant:1', 'order-1', ['a' => 1]));
-        $fallback = $publisher->publish(new FakeOutboxEvent('order.shipped', 'tenant:1', 'order-1', ['a' => 1]));
+        $overridden = $publisher->publish(new FakeOutboxEvent('order.paid', 'scope:1', 'order-1', ['a' => 1]));
+        $fallback = $publisher->publish(new FakeOutboxEvent('order.shipped', 'scope:1', 'order-1', ['a' => 1]));
 
         $this->assertSame(3, $repository->raw($overridden->id)['max_attempts']);
         $this->assertSame(8, $repository->raw($fallback->id)['max_attempts']);
@@ -86,12 +86,12 @@ final class OutboxPublisherTest extends TestCase
         $repository = new FakeOutboxEventRepository();
         $publisher = $this->publisher($repository);
 
-        $tenantOne = $publisher->publish(new FakeOutboxEvent('order.paid', 'tenant:1', 'order-1', ['a' => 1]));
-        $tenantTwo = $publisher->publish(new FakeOutboxEvent('order.paid', 'tenant:2', 'order-1', ['a' => 1]));
+        $scopeOne = $publisher->publish(new FakeOutboxEvent('order.paid', 'scope:1', 'order-1', ['a' => 1]));
+        $scopeTwo = $publisher->publish(new FakeOutboxEvent('order.paid', 'scope:2', 'order-1', ['a' => 1]));
 
-        $this->assertTrue($tenantOne->created);
-        $this->assertTrue($tenantTwo->created);
-        $this->assertNotSame($tenantOne->id, $tenantTwo->id);
+        $this->assertTrue($scopeOne->created);
+        $this->assertTrue($scopeTwo->created);
+        $this->assertNotSame($scopeOne->id, $scopeTwo->id);
         $this->assertSame(2, $repository->count());
     }
 

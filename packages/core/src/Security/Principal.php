@@ -7,20 +7,21 @@ namespace Hyperf\Apex\Security;
 /**
  * 当前请求的身份快照。
  *
- * `tenantId` 与 `agentId` 是两类互斥的数据范围：租户用户带 `tenantId`，代理商用户带 `agentId`，
- * 系统用户两者都为空。业务代码不得靠「哪个不为空」猜身份，一律以 `userType` 为准
- * （见 AuthorizationMiddleware 的 userType 校验）。
+ * 只承载与身份识别直接相关的通用维度；应用自己的数据范围、组织、渠道等概念一律放进
+ * `$claims`，组件不解释其中任何键，也不替应用定义「一个用户属于什么」。
  */
 final readonly class Principal
 {
+    /**
+     * @param array<string, mixed> $claims 应用自定义的身份声明，键与含义均由应用决定
+     */
     public function __construct(
         public int $userId,
-        public ?int $tenantId,
-        public ?int $agentId,
         public string $userType,
         public string $username,
         public string $sessionId,
         public int $permissionVersion = 1,
+        public array $claims = [],
     ) {
     }
 }

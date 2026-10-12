@@ -64,8 +64,8 @@ final class RateLimitRuleReader
     /**
      * 未显式命名时按「完整类名.方法名」派生。
      *
-     * 只取短类名会让不同命名空间下的同名控制器（Admin / Integration / 租户端）共用
-     * 一个桶；带上完整类名才能保证每个接口一个桶。
+     * 只取短类名会让不同命名空间下的同名控制器共用一个桶；
+     * 带上完整类名才能保证每个接口一个桶。
      */
     private function fallbackName(ReflectionMethod $method): string
     {

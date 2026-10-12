@@ -260,7 +260,7 @@ final class OutboxDeliveryServiceTest extends TestCase
     private function seed(FakeOutboxEventRepository $repository, string $key = 'order-1', int $maxAttempts = 8): int
     {
         $event = $repository->create([
-            'scope_key' => 'tenant:1',
+            'scope_key' => 'scope:1',
             'event_type' => 'order.paid',
             'idempotency_key' => $key,
             'aggregate_type' => null,

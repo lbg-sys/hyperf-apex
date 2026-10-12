@@ -31,7 +31,7 @@ final class WsConnectionStoreTest extends TestCase
         ]));
 
         $store = new WsConnectionStore();
-        $principal = new Principal(7, 3, null, 'device', 'device-7', 'session-7');
+        $principal = new Principal(userId: 7, userType: 'device', username: 'device-7', sessionId: 'session-7');
 
         $store->register(WsSession::open('ws', 1, '/ws/device', $principal, time()));
         $this->assertSame(['ws:1'], $store->allConnections());

@@ -27,7 +27,7 @@
 
 ## 核心设计特性
 
-- **纯通用权限体系**：提供统一顶层契约 `PermissionInterface`，消除对特定业务角色/枚举的硬编码；支持统一的 `#[RequirePermission]`（支持 `string`、`BackedEnum`、`PermissionInterface` 或其数组，支持 `guard` 多端隔离与 `mode` 组合）与 `#[RequireRole]` 注解；
+- **纯通用权限体系**：提供统一顶层契约 `PermissionInterface`，消除对特定业务角色/枚举的硬编码；支持统一的 `#[RequirePermission]`（支持 `string`、`BackedEnum`、`PermissionInterface` 或其数组，支持 `guard` 自定义权限命名空间与 `mode` 组合）与 `#[RequireRole]` 注解；
 - **插件化 Fail-Fast 启动检查**：`StartupChecker` 提供纯规则驱动配置（`required`、`required_envs`）与 `CheckerInterface` 自定义探测器插件机制，彻底剔除针对具体第三方驱动的写死逻辑；
 - **强类型 DTO 架构**：基类统一收拢为 `Hyperf\Apex\DTO\AbstractDTO`，配合 `#[FromQuery]`、`#[FromBody]` 实现自动化参数水合、约束校验与 OpenAPI 3.1 规格自动推导；
 - **现代化工程标准**：全库严格遵循 PHP 8.4 + Swoole 6.2，PHPStan Level 6 静态分析全量 0 error，100% PSR 规范排版。

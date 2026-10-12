@@ -40,7 +40,7 @@ final class RequestBuilderTest extends TestCase
     {
         $headers = $this->headers('withHeaders');
 
-        $this->assertSame(['X-Tenant-Id', 'X-Trace-Id'], array_map(static fn (OA\Parameter $p): string => (string) $p->name, $headers));
+        $this->assertSame(['X-Client-Id', 'X-Trace-Id'], array_map(static fn (OA\Parameter $p): string => (string) $p->name, $headers));
         $this->assertSame('header', $headers[0]->in);
         $this->assertTrue($headers[0]->required);
         // 方法级同名声明覆盖类级：说明与必填都按方法级算。
@@ -275,7 +275,7 @@ final class RequestBuilderTest extends TestCase
 /**
  * 各类参数组合的载体。方法体不会被调用 —— 本组用例只反射签名。
  */
-#[ApiHeader(name: 'X-Tenant-Id', description: '租户标识', required: true)]
+#[ApiHeader(name: 'X-Client-Id', description: '客户端标识', required: true)]
 #[ApiHeader(name: 'X-Trace-Id', description: '类级追踪', required: false)]
 final class RequestBuilderFixture
 {

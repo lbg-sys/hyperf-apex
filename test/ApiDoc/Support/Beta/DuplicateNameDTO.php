@@ -10,7 +10,7 @@ namespace Hyperf\Apex\Test\ApiDoc\Support\Beta;
  */
 final readonly class DuplicateNameDTO
 {
-    public function __construct(public string $tenantId = '')
+    public function __construct(public string $channelId = '')
     {
     }
 }

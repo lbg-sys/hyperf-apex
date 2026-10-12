@@ -11,7 +11,7 @@ return new class extends Migration {
     {
         Schema::create('outbox_events', function (Blueprint $table): void {
             $table->bigIncrements('id')->comment('Outbox 事件 ID');
-            $table->string('scope_key', 128)->comment('幂等隔离范围，例如 system 或 tenant:1');
+            $table->string('scope_key', 128)->comment('幂等隔离范围键，取值含义由调用方定义');
             $table->string('event_type', 128)->comment('稳定的业务事件类型');
             $table->string('idempotency_key', 128)->comment('业务幂等键');
             $table->string('aggregate_type', 128)->nullable()->comment('关联业务资源类型');

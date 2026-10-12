@@ -10,7 +10,7 @@ use Hyperf\Apex\DTO\AbstractDTO;
  * 渠道无关的接收目标。
  *
  * 由调用方从自己的渠道配置投影而来——渠道层不碰数据库，
- * 因此这里只有「怎么连上去」的参数，没有 tenant / 配置 ID 之类的业务概念。
+ * 因此这里只有「怎么连上去」的参数，不承载任何业务对象标识。
  */
 final readonly class NotifyTargetDTO extends AbstractDTO
 {

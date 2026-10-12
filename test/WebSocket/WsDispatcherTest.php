@@ -122,17 +122,17 @@ final class WsDispatcherTest extends TestCase
 
         $response = $this->dispatcher($store)->dispatch(
             $session,
-            '{"id":"1","event":"sys.subscribe","data":{"room":"tenant:1"}}',
+            '{"id":"1","event":"sys.subscribe","data":{"room":"room:1"}}',
         );
 
         $this->assertSame(ErrorCode::SUCCESS->value, $response->code);
-        $this->assertSame([['ws:1', 'tenant:1']], $store->joined);
-        $this->assertSame(['tenant:1'], $session->rooms());
+        $this->assertSame([['ws:1', 'room:1']], $store->joined);
+        $this->assertSame(['room:1'], $session->rooms());
 
         $data = $response->data;
         $this->assertInstanceOf(WsSubscriptionResultDTO::class, $data);
-        $this->assertSame('tenant:1', $data->room);
-        $this->assertSame(['tenant:1'], $data->rooms);
+        $this->assertSame('room:1', $data->room);
+        $this->assertSame(['room:1'], $data->rooms);
     }
 
     public function testSubscribeRejectsBeyondPerConnectionRoomLimit(): void
@@ -157,7 +157,7 @@ final class WsDispatcherTest extends TestCase
 
         $response = $this->dispatcher($store)->dispatch(
             $this->session(),
-            '{"id":"1","event":"sys.subscribe","data":{"room":"tenant:1"}}',
+            '{"id":"1","event":"sys.subscribe","data":{"room":"room:1"}}',
         );
 
         $this->assertSame(ErrorCode::RESOURCE_CONFLICT->value, $response->code);
@@ -168,15 +168,15 @@ final class WsDispatcherTest extends TestCase
     {
         $store = new FakeWsConnectionStore();
         $session = $this->session();
-        $session->joinRoom('tenant:1');
+        $session->joinRoom('room:1');
 
         $response = $this->dispatcher($store)->dispatch(
             $session,
-            '{"id":"2","event":"sys.unsubscribe","data":{"room":"tenant:1"}}',
+            '{"id":"2","event":"sys.unsubscribe","data":{"room":"room:1"}}',
         );
 
         $this->assertSame(ErrorCode::SUCCESS->value, $response->code);
-        $this->assertSame([['ws:1', 'tenant:1']], $store->left);
+        $this->assertSame([['ws:1', 'room:1']], $store->left);
         $this->assertSame([], $session->rooms());
     }
 
@@ -188,7 +188,7 @@ final class WsDispatcherTest extends TestCase
 
         $response = $this->dispatcher($store)->dispatch(
             $this->session(),
-            '{"id":"3","event":"sys.subscribe","data":{"room":"tenant:1"}}',
+            '{"id":"3","event":"sys.subscribe","data":{"room":"room:1"}}',
         );
 
         $this->assertSame(ErrorCode::INTERNAL_ERROR->value, $response->code);
@@ -312,7 +312,7 @@ final class WsDispatcherTest extends TestCase
 
     private function principal(): Principal
     {
-        return new Principal(7, 1, null, 'admin', 'tester', 'session-id');
+        return new Principal(userId: 7, userType: 'admin', username: 'tester', sessionId: 'session-id');
     }
 }
 
