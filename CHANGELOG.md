@@ -16,18 +16,44 @@
   `IdempotencyMiddleware` 新增 `ConfigInterface`（读 `idempotency.max_response_bytes`）。
 - `Hyperf\Apex\Outbox\Repository\Contract\OutboxEventRepositoryInterface` 新增 `renewLease()`：
   投递前续租并校验租约。自行实现该接口（例如换存储）的工程需要补齐。
-- `api-doc:generate` **新增三项生成期校验**，此前这些写法都会被静默接受并产出错误的文档：
+- `api-doc:generate` **新增五项生成期校验**，此前这些写法都会被静默接受并产出错误的文档：
   接口方法漏写 `#[ApiOperation]`（曾退回英文方法名当 summary）、`#[ApiError]` 里声明 `SUCCESS`
-  （曾产出 `code` 枚举为空的 200 响应）、`#[ApiHeader]` 声明认证头（曾与 `securityScheme` 重复声明）。
-  存量工程升级后需要补齐这三类声明，否则生成命令会失败。
+  （曾产出 `code` 枚举为空的 200 响应）、`#[ApiHeader]` 声明认证头（曾与 `securityScheme` 重复
+  声明）、散装数组请求参数（`#[FromQuery] array $codes` 曾产出没有 `items` 的 `type: array`，
+  上游判 warning、整个命令失败）、悬空 `$ref`（`#[Discriminator]` 的 mapping 漏写 `#[OneOf]`
+  时会留下指向不存在组件的引用）。存量工程升级后需要先跑一次生成命令并补齐声明。
+- `Hyperf\Apex\Http\Response\Contract\ApiResponseInterface` 新增 `code(): int`：信封的业务状态码
+  由它映射成 HTTP 状态（见「修复」里那条）。自行实现该接口的响应 DTO 需要补齐这个方法。
+- DTO 层新增的生成期报错与校验收紧（详见「修复」）：`#[ArrayOf('短类名')]`（字符串里的类名拿不到
+  命名空间）与元素层的死约束（`#[ArrayOf('string')]` + `#[ItemMinimum(1)]`）现在都直接报错；
+  联合类型属性（`int|string`）与 `#[MapOf('X')]` 的值类型开始参与校验 —— 这两类字段此前
+  「文档写了、服务端不查」，升级后不合规的请求会开始收到 422。
+- `ApiResponseDTO::success()` 不传 `data` 时，`data` 从 `[]` 变成 `null`（与「无业务数据用 `void`
+  返回类型、文档里 `data: null`」的口径一致）。依赖空数组形状的调用方需要跟改。
 - **新增启动期访问声明检查**（`PermissionDeclarationCheckListener`）：每个带路由注解的公开方法
   都必须能解析出访问口径（`#[PublicAccess]` / `#[IntegrationAccess]` / `#[ApiKeyAccess]` /
   `#[Authenticated]` 之一，方法级或类级皆可），且不能同时声明多个口径，否则**应用启动失败**。
   存量工程需先补齐声明；迁移期可用 `security.declaration_check.enabled=false` 临时关闭
   （关掉的这段时间里漏声明会静默通过）。
-- `Hyperf\Apex\Security\AccessDeclaration` 构造新增 `permissionMode` / `roleMode` 参数，
-  并新增 `hasAccessDeclaration()` / `declaredAccessModes()` / `mergedWith()`；
+- `Hyperf\Apex\Security\AccessDeclaration` 构造新增 `permissionMode` / `roleMode` / `roleGuard`
+  参数，并新增 `hasAccessDeclaration()` / `declaredAccessModes()` / `mergedWith()`；
   `#[RequireRole]` 的空角色标识改为构造期抛错（与 `#[RequirePermission]` 同一判据）。
+
+### 升级步骤
+
+本次的破坏性变更都能在启动或生成阶段自证，建议按这个顺序过一遍：
+
+1. 跑一次 `api-doc:generate`：五项生成期校验会把漏标 `#[ApiOperation]`、`#[ApiError(SUCCESS)]`、
+   `#[ApiHeader]` 声明认证头、散装数组参数、悬空 `$ref` 一次性列出来。
+2. 启动应用：访问声明检查会列出所有「没声明访问口径」或「同时声明多个口径」的端点。
+   来不及补声明时可先用 `security.declaration_check.enabled=false` 临时放行
+   （这段时间里漏声明会静默通过，别长期开着）。
+3. 补齐自行实现的接口：`ApiResponseInterface` 的 `code()`、`OutboxEventRepositoryInterface` 的
+   `renewLease()`、`WsConnectionStoreInterface` 的 `hasConnection()` / `touch()` / `idleConnections()`。
+4. 检查手工 `new` 的位置（容器装配不受影响）：`WsPushService` / `WsGatewayRegisterListener` /
+   `WsDispatcher` / `WsGatewayController` / `IdempotencyMiddleware` 的构造参数有新增。
+5. 检查 DTO 声明：`#[ArrayOf]` 里的短类名要写成完整类名；`#[ArrayOf('string')]` + `#[ItemMinimum]`
+   这类跨类型的死约束要改成合法组合；联合类型与 `#[MapOf]` 字段的请求会被真正校验。
 
 ### 修复
 
