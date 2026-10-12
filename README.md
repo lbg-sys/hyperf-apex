@@ -73,7 +73,7 @@ composer require hyperf-apex/apex
 每个包均提供独立的配置发布 ID：
 
 ```bash
-# 发布基础底座配置（access_log, health, sql_log, startup_checks 等）
+# 发布基础底座配置（access_log, integration, sql_log, startup_checks 等）
 php bin/hyperf.php vendor:publish hyperf-apex/core --id=config
 
 # 发布 ApiDoc 配置

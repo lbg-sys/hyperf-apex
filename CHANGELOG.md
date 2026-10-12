@@ -235,6 +235,10 @@
 
 ### 新增
 
+- `hyperf-apex/core` 新增 `publish/integration.php`：`integration.integration_token` 一直被
+  `IntegrationTokenMiddleware` 读取，但没有任何配置模板承载它 —— 应用只能从源码里猜这个键，
+  而漏配的表现是集成接口直接抛「集成凭证未配置」（报错里现在已带上键名）。
+  模板的注释同时写明：未配置时中间件**拒绝**而不是放行，「没配就没人管」是最危险的默认值。
 - `Hyperf\Apex\DTO\Contract\DocumentationOnlyAttribute`：标记「不参与请求校验」的 Schema Attribute。
   声明式约束有「文档」与「请求校验」两条落地路径，而结构关键字（`patternProperties`、
   `dependentRequired`、`propertyNames`、`unevaluated*`）、边界关键字（`exclusiveMinimum`、
@@ -266,6 +270,10 @@
 
 ### 变更
 
+- 删除 `hyperf-apex/core` 的 `publish/health.php`：它唯一的键 `health.redis_pool` 全仓没有任何
+  读取点，注释却承诺「就绪探针（`/health/ready`）探测的 Redis 连接池」—— 而这个端点在仓库里
+  根本不存在（`access_log` 里默认排除 `/health/*` 的规则说明它曾被规划过，那条排除保留：
+  应用自行实现的探针仍能享受它）。要提供就绪探针得先把它实现出来，那属于功能而不是配置。
 - `OutboxPublisher::sortKeys()` 的注释说明为什么**不复用** `ArrayNormalizer::sortKeys()`：
   两者的排序 flag 不同（`ksort` 默认 SORT_REGULAR 与 SORT_STRING 对数字字符串键的顺序不同），
   而摘要生成后已落库成 `idempotency_key` —— 换排序规则会让同一份载荷算出不同的键，
