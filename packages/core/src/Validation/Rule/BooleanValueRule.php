@@ -27,6 +27,17 @@ final class BooleanValueRule implements Rule, ValidatorAwareRule
 
     public function passes(string $attribute, mixed $value): bool
     {
+        return self::accepts($value);
+    }
+
+    /**
+     * 判定口径单独暴露：联合类型的判定（{@see UnionTypeRule}）遇到 bool 分支时复用这一份实现。
+     *
+     * 同一份布尔口径写两遍时，两处漂移不会报错 —— 表现只是「int|string」与「bool」两个字段
+     * 对同一个输入给出不同结论。
+     */
+    public static function accepts(mixed $value): bool
+    {
         if (is_bool($value)) {
             return true;
         }

@@ -6,7 +6,9 @@ namespace Hyperf\Apex\DTO\Metadata;
 
 use Hyperf\Apex\Validation\Rule\BooleanValueRule;
 use Hyperf\Apex\Validation\Rule\NotBooleanRule;
+use Hyperf\Apex\Validation\Rule\UnionTypeRule;
 use ReflectionNamedType;
+use ReflectionUnionType;
 
 final class DTORuleFactory
 {
@@ -79,11 +81,20 @@ final class DTORuleFactory
                 if ($property->nullable) {
                     $fieldRules[] = 'nullable';
                 }
+            } elseif ($type instanceof ReflectionUnionType) {
+                /*
+                 * 联合类型（`int|string`）按分支生成「满足任一分支即可」的规则。
+                 *
+                 * 此前整段不加类型规则 —— 类型不符的值能通过校验，直到构造器赋值时才抛 TypeError，
+                 * 客户端拿到 500 而不是 422；而文档侧本来就用 oneOf 描述这些字段，三层结论不一致。
+                 */
+                array_push($fieldRules, ...self::unionTypeRules($type));
+                if ($property->nullable) {
+                    $fieldRules[] = 'nullable';
+                }
             }
-            // 联合 / 交集类型（`int|string`）不生成类型规则：JSON 层没有单一类型能表达它，
-            // 而文档侧用 oneOf 描述、水合按声明逐个尝试 —— 在这里补一条规则只会与其中一侧打架。
-            // 代价是类型不符的值会走到构造器边界（TypeError → 500）而不是 422；
-            // 需要 422 就用单一类型，或给这个字段挂一个自定义校验规则。
+            // 交集类型（`A&B`）在 JSON 里没有对应形态，保持不加约束：真正的边界在构造器，
+            // 在这里补一条规则只会与文档打架。
             foreach ($property->validationAttributes as $attribute) {
                 $instance = $attribute->newInstance();
                 array_push($fieldRules, ...$instance->validationRules());
@@ -127,6 +138,38 @@ final class DTORuleFactory
         // 已经在展开路径上出现过：再展开就是无限递归。停下之后只剩「元素必须是对象」这一条，
         // 与文档一致 —— schema 侧用 $ref 表达，本来也不会展开成多层。
         return isset($expanding[$itemType]) ? $rules : $rules + self::rulesForClass($itemType, $key . '.', $expanding);
+    }
+
+    /**
+     * 联合类型 → 校验规则。
+     *
+     * 有分支本身没有类型约束（`object`、未知类名等）时不加规则：那种联合在 JSON 层没有可判定的
+     * 边界，硬套一条只会与文档打架。`null` 分支由 nullable 规则承担，不参与判定。
+     *
+     * @return list<object|string>
+     */
+    private static function unionTypeRules(ReflectionUnionType $type): array
+    {
+        $types = [];
+        foreach ($type->getTypes() as $branch) {
+            if (! $branch instanceof ReflectionNamedType) {
+                // 防御：联合里再嵌联合或交集（PHP 目前不允许），表达不了就退回不加约束。
+                return [];
+            }
+
+            $name = $branch->getName();
+            if ($name === 'null') {
+                continue;
+            }
+
+            if (self::typeRule($name) === []) {
+                return [];
+            }
+
+            $types[] = $name;
+        }
+
+        return $types === [] ? [] : [new UnionTypeRule($types)];
     }
 
     /**

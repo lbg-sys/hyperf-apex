@@ -183,6 +183,20 @@
 - `SensitiveDataFilter` 的敏感键名补上 `api_key` / `apikey` / `private_key` / `signature`：
   这些字段名不会命中原有的 `password` / `token` / `secret` 等词，但落进审计或异常快照就是泄漏。
   裸 `key` 刻意不加 —— 它作为普通字段名太常见（`cache_key`、`sort_key`），加进来会遮掉大量正常字段。
+- **联合类型属性此前完全没有类型规则**（`int|string` 这类）：类型不符的值（`{"value": {}}`）
+  能通过校验，直到构造器赋值时才抛 TypeError —— 客户端拿到 500 而不是 422，而文档侧本来就用
+  `oneOf` 描述这些字段。新增 `Hyperf\Apex\Validation\Rule\UnionTypeRule`（「满足任一分支即可」，
+  判定口径与单一类型一致：`integer` 认数字字符串、布尔不算整数），`null` 分支仍由 nullable 规则承担；
+  有分支本身没有类型约束（`object`、未知类名）时整个联合没有可判定的边界，维持不加规则。
+- **元素层（`items`）的死约束检查此前形同虚设**：`TYPE_BOUND_KEYWORDS` 只列了字符串 / 数组 / 对象
+  三组关键字，`minimum` 这类数值关键字根本不在表里，于是 `#[ArrayOf('string')] #[ItemMinimum(1)]`
+  仍然产出 `items: {type: string, minimum: 1}` 这种不会被任何校验器执行的约束。关键字表改为
+  「关键字 → 生效类型集合」（数值关键字对 `integer` 与 `number` 都生效，旧结构表达不了），
+  并补齐 `properties` / `required` / `dependentSchemas` / `contains` / `multipleOf` / `format` 等。
+- 泛型组件注册的结构比较对键序脱敏：`{a:1, b:2}` 与 `{b:2, a:1}` 此前会被判成「两种不同结构」
+  而报冲突，现在比较前递归按键序归一。
+- `BooleanValueRule` 的判定口径暴露为 `accepts()`：联合类型的 bool 分支复用同一份实现 ——
+  同一个布尔口径写两遍时，两处漂移不会报错，表现只是两个字段对同一输入给出相反结论。
 
 - 控制器发现规则重写：不再要求路径里含 `/Controller/`，也不再从文件内容里用正则抽类名 ——
   前者会让放在别的目录下的控制器静默从文档里消失，后者遇到 `app/Controller/` 下的

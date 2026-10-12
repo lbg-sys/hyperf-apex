@@ -11,6 +11,7 @@ use Hyperf\Apex\DTO\Attribute\EnumValue;
 use Hyperf\Apex\DTO\Attribute\FieldDescription;
 use Hyperf\Apex\DTO\Attribute\Format;
 use Hyperf\Apex\DTO\Attribute\IntAsString;
+use Hyperf\Apex\DTO\Attribute\ItemMinimum;
 use Hyperf\Apex\DTO\Attribute\Length;
 use Hyperf\Apex\DTO\Attribute\MapOf;
 use Hyperf\Apex\DTO\Attribute\PropertyCount;
@@ -125,6 +126,26 @@ final class DTOSchemaFactoryTest extends TestCase
 
         $this->assertSame('object', $properties['scores']->get('type'));
         $this->assertSame(1, $properties['scores']->get('minProperties'));
+    }
+
+    public function testItemKeywordThatDoesNotMatchItemTypeIsRejected(): void
+    {
+        // `minimum` 只对数值生效：挂在 string 元素上是一条不会被任何校验器执行的死约束。
+        // 属性级同样写法会报错、元素级此前不会 —— 同一类错误在两层必须给同一种结论。
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('minimum 与 type: string 不匹配');
+
+        $this->properties(StringItemsWithMinimumDTO::class);
+    }
+
+    public function testNumericItemKeywordOnNumericItemsIsAllowed(): void
+    {
+        // 元素是整数时同一个关键字合法：拦死约束不能把正常写法一起拦掉。
+        $properties = $this->properties(IntItemsWithMinimumDTO::class);
+        $items = $this->fragment($properties['scores'], 'items');
+
+        $this->assertSame('integer', $items->get('type'));
+        $this->assertSame(1, $items->get('minimum'));
     }
 
     public function testKeywordThatDoesNotMatchTypeIsRejected(): void
@@ -294,6 +315,30 @@ final readonly class DefaultValueDTO
     public function __construct(
         public string $name = 'x',
         public ?string $note = null,
+    ) {
+    }
+}
+
+/** 元素是字符串却给了数值关键字：生成期必须拒绝。 */
+final readonly class StringItemsWithMinimumDTO
+{
+    /** @param list<string> $codes */
+    public function __construct(
+        #[ArrayOf('string')]
+        #[ItemMinimum(1)]
+        public array $codes = [],
+    ) {
+    }
+}
+
+/** 元素是整数：同一个关键字合法。 */
+final readonly class IntItemsWithMinimumDTO
+{
+    /** @param list<int> $scores */
+    public function __construct(
+        #[ArrayOf('int')]
+        #[ItemMinimum(1)]
+        public array $scores = [],
     ) {
     }
 }
