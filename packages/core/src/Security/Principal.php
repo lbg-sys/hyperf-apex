@@ -24,4 +24,19 @@ final readonly class Principal
         public array $claims = [],
     ) {
     }
+
+    /**
+     * 读取一条应用自定义声明；键不存在或值为 null 时返回默认值。
+     *
+     * `$default` 的类型即返回值类型——这是组件能给出的唯一类型提示，
+     * claims 里实际存入的值由应用保证与 `$default` 同类型，组件不做运行时校验。
+     *
+     * @template T
+     * @param T $default
+     * @return T
+     */
+    public function claim(string $key, mixed $default = null): mixed
+    {
+        return $this->claims[$key] ?? $default;
+    }
 }
