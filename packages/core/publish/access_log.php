@@ -26,14 +26,11 @@ $parsePatterns = static function (mixed $value): array {
  * 通用底座写死业务路由，别的项目拿到的就是一份含义错误的默认值 ——
  * 需要排除时用环境变量给出：ACCESS_LOG_EXCLUDE_PATHS=/api/xxx/get_list,/api/xxx/*
  *
- * 排除健康探针：探针按秒级轮询，正常时没有任何信息量，只在故障时才值得看一眼 ——
- * 而排除只作用于正常完成的请求，未就绪的 503 照旧留痕（见 RequestTimingMiddleware::shouldLog）。
- *
- * 排除不覆盖故障：响应 5xx 或下游抛异常的请求照旧记 access 日志，
- * 否则「高频接口在报错」这件事会被静默掉，只剩一个跑得飞快的日志文件。
+ * 排除只作用于正常完成的请求：响应 5xx、下游抛异常的请求，以及「未就绪的 503」都照旧留痕
+ * （见 RequestTimingMiddleware::shouldLog）—— 否则「高频接口在报错」这件事会被静默掉，
+ * 只剩一个跑得飞快的日志文件。
  */
 $exclude = [
-    '/health/*',
     // 指标抓取：Prometheus 按固定间隔拉取，正常时没有任何信息量。
     // 注意它只作用于 access 日志 —— 指标自身的埋点不跟随这份名单（高频接口正是最需要观测的）。
     '/metrics/*',

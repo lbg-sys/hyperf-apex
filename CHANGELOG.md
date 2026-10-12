@@ -311,10 +311,11 @@
   其余承诺（发布 ID、`/metrics` 与 `/metrics/dashboard` 端点、`idle_timeout` 默认 180、
   限流 1 秒 50 条、超限码 `10007`、启动检查的三个键、`WsPusherInterface` 的四个方法、
   协议字段与推送 `type: push`、房间名规则、只读仓命名、`CONTRIBUTING.md`）都与代码一致。
-- 删除 `hyperf-apex/core` 的 `publish/health.php`：它唯一的键 `health.redis_pool` 全仓没有任何
-  读取点，注释却承诺「就绪探针（`/health/ready`）探测的 Redis 连接池」—— 而这个端点在仓库里
-  根本不存在（`access_log` 里默认排除 `/health/*` 的规则说明它曾被规划过，那条排除保留：
-  应用自行实现的探针仍能享受它）。要提供就绪探针得先把它实现出来，那属于功能而不是配置。
+- **整个移除「就绪探针」相关的配置**（该功能从未实现，也不属于组件职责）：删除 `hyperf-apex/core`
+  的 `publish/health.php`（它唯一的键 `health.redis_pool` 全仓零读取，注释却承诺「就绪探针
+  `/health/ready` 探测的 Redis 连接池」），并去掉 `publish/access_log.php` 默认排除里的
+  `/health/*` —— 那是为这个不存在的探针留的。应用自己暴露了健康检查端点、又不想让它进 access
+  日志时，把它写进 `access_log.exclude`（或 `ACCESS_LOG_EXCLUDE_PATHS`）即可。
 - `OutboxPublisher::sortKeys()` 的注释说明为什么**不复用** `ArrayNormalizer::sortKeys()`：
   两者的排序 flag 不同（`ksort` 默认 SORT_REGULAR 与 SORT_STRING 对数字字符串键的顺序不同），
   而摘要生成后已落库成 `idempotency_key` —— 换排序规则会让同一份载荷算出不同的键，
