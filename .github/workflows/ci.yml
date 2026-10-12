@@ -17,7 +17,7 @@ jobs:
 
     steps:
       - name: 检出代码
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       # 本仓库要求 PHP >= 8.4 与 Swoole 6.2（见 AGENTS.md）。
       # 首次接入时请确认 runner 确实装得到这一组合：装不到就换成与生产一致的容器镜像
