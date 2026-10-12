@@ -6,6 +6,7 @@ namespace Hyperf\Apex\Security\Attribute;
 
 use Attribute;
 use BackedEnum;
+use InvalidArgumentException;
 
 /**
  * 声明接口需要的角色身份。
@@ -30,7 +31,16 @@ final class RequireRole
         $all = is_array($role) ? $role : [$role];
         $extracted = [];
         foreach ($all as $item) {
-            $extracted[] = $item instanceof BackedEnum ? (string) $item->value : (string) $item;
+            $identifier = $item instanceof BackedEnum ? (string) $item->value : (string) $item;
+
+            // 与 #[RequirePermission] 同一判据：空角色标识会让 isDeclared() 为真、
+            // 却没有任何主体能持有它（表现为该接口对所有请求恒拒绝且看不出原因），
+            // 声明错误必须在构造期报出来。
+            if (trim($identifier) === '') {
+                throw new InvalidArgumentException('角色标识不能为空：请给出字符串或 BackedEnum。');
+            }
+
+            $extracted[] = $identifier;
         }
         $this->roles = array_values(array_unique($extracted));
     }

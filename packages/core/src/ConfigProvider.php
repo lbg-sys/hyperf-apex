@@ -9,6 +9,7 @@ use Hyperf\Apex\Listener\DbQueryExecutedListener;
 use Hyperf\Apex\Listener\EnvironmentConfigCheckListener;
 use Hyperf\Apex\Listener\ResumeExitCoordinatorListener;
 use Hyperf\Apex\Security\Contract\PrincipalContextInterface;
+use Hyperf\Apex\Security\Listener\PermissionDeclarationCheckListener;
 use Hyperf\Apex\Security\PrincipalContext;
 
 class ConfigProvider
@@ -28,6 +29,7 @@ class ConfigProvider
             'listeners' => [
                 DbQueryExecutedListener::class,
                 EnvironmentConfigCheckListener::class,
+                PermissionDeclarationCheckListener::class,
                 ResumeExitCoordinatorListener::class,
             ],
             'annotations' => [

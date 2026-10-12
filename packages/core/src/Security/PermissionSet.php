@@ -76,11 +76,15 @@ final readonly class PermissionSet
     /**
      * 获取所有权限标识列表。
      *
+     * 键会被 PHP 规整：形如十进制整数的权限码（int-backing 枚举很常见）会被存成 int 键，
+     * 直接返回 array_keys 会让 `list<string>` 里混进 int，严格比较的下游会踩坑。
+     * 这里统一转回字符串 —— 契约是「权限码是不透明字符串」。
+     *
      * @return list<string>
      */
     public function codes(): array
     {
-        return array_keys($this->index);
+        return array_map(strval(...), array_keys($this->index));
     }
 
     /**

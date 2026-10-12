@@ -20,6 +20,14 @@
   接口方法漏写 `#[ApiOperation]`（曾退回英文方法名当 summary）、`#[ApiError]` 里声明 `SUCCESS`
   （曾产出 `code` 枚举为空的 200 响应）、`#[ApiHeader]` 声明认证头（曾与 `securityScheme` 重复声明）。
   存量工程升级后需要补齐这三类声明，否则生成命令会失败。
+- **新增启动期访问声明检查**（`PermissionDeclarationCheckListener`）：每个带路由注解的公开方法
+  都必须能解析出访问口径（`#[PublicAccess]` / `#[IntegrationAccess]` / `#[ApiKeyAccess]` /
+  `#[Authenticated]` 之一，方法级或类级皆可），且不能同时声明多个口径，否则**应用启动失败**。
+  存量工程需先补齐声明；迁移期可用 `security.declaration_check.enabled=false` 临时关闭
+  （关掉的这段时间里漏声明会静默通过）。
+- `Hyperf\Apex\Security\AccessDeclaration` 构造新增 `permissionMode` / `roleMode` 参数，
+  并新增 `hasAccessDeclaration()` / `declaredAccessModes()` / `mergedWith()`；
+  `#[RequireRole]` 的空角色标识改为构造期抛错（与 `#[RequirePermission]` 同一判据）。
 
 ### 修复
 
@@ -143,6 +151,17 @@
 - `AbstractModel::getEventDispatcher()` 缓存解析结果：retrieved 事件在每次模型水合时都会问一次
   （连只读的 `find()` 也算），而容器在运行期不变。不缓存 `null` —— worker 启动完成前那一刻的
   结果会把此后所有 Model 事件按死。
+- **方法级的细粒度要求不再顶掉类级的访问口径**：此前只要方法级出现 `#[RequirePermission]` /
+  `#[RequireRole]`，整个类级声明（含 `#[Authenticated]`）就被丢弃 —— 依赖 `authenticated`
+  决定是否要求登录的消费者会直接放行。现在两个维度分开合并：口径方法级优先、回退类级；
+  权限码与角色取并集（合并方向永远不放松权限）。
+- **类级访问声明改为沿继承链查找**：类上的 Attribute 不被继承，动作写在子类、口径声明在
+  抽象基类上时，此前会「查不到任何声明」（与 `ResponseEncoderResolver` 修过的是同一类缺陷）。
+- `#[RequirePermission]` / `#[RequireRole]` 的 `mode`（AND / OR）此前是**死参数**：
+  声明里写了 OR，而 `AccessDeclaration` 没有这个字段、判定处也拿不到，最终按 AND 执行
+  （静默收紧，权限要求比声明更严）。现在透传给应用判定。
+- `PermissionSet::codes()` 保证返回字符串：形如十进制整数的权限码会被 PHP 规整成 int 键，
+  混进 `list<string>` 会让严格比较的下游踩坑。
 
 - 控制器发现规则重写：不再要求路径里含 `/Controller/`，也不再从文件内容里用正则抽类名 ——
   前者会让放在别的目录下的控制器静默从文档里消失，后者遇到 `app/Controller/` 下的
@@ -155,6 +174,8 @@
 
 ### 新增
 
+- 启动期访问声明检查 `PermissionDeclarationCheckListener` 与它的配置模板 `publish/security.php`
+  （见「破坏性变更」里的说明）：漏标口径的端点此前既不会被拦下，文档侧又会被描述成公开接口。
 - `AbstractRepository::paginate()`：同一份条件同时产出当前页数据与总数（先 clone 出 count、
   再取当前页 slice），供分页响应使用。各仓储自己拼两遍条件时，漏掉一个 `where` 就会出现
   「total 是 100、list 只有 3 条」这类对不上的分页。

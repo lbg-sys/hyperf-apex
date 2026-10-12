@@ -13,10 +13,16 @@ namespace Hyperf\Apex\Security;
  */
 final readonly class AccessDeclaration
 {
+    public const MODE_AND = 'AND';
+
+    public const MODE_OR = 'OR';
+
     /**
      * @param list<string> $permissions 需要的权限码标识列表
      * @param list<string> $roles 需要的角色标识列表
      * @param null|string $guard 权限所属的守卫标识，取值由应用自行定义
+     * @param string $permissionMode 权限码的校验模式（AND / OR），透传给应用判定
+     * @param string $roleMode 角色的校验模式（AND / OR），透传给应用判定
      */
     public function __construct(
         public bool $public = false,
@@ -26,6 +32,8 @@ final readonly class AccessDeclaration
         public array $permissions = [],
         public array $roles = [],
         public ?string $guard = null,
+        public string $permissionMode = self::MODE_AND,
+        public string $roleMode = self::MODE_AND,
     ) {
     }
 
@@ -34,12 +42,72 @@ final readonly class AccessDeclaration
      */
     public function isDeclared(): bool
     {
-        return $this->public
-            || $this->integration
-            || $this->apiKey
-            || $this->authenticated
-            || $this->permissions !== []
-            || $this->roles !== [];
+        return $this->hasAccessDeclaration() || $this->requiresPermission() || $this->roles !== [];
+    }
+
+    /**
+     * 是否声明了「访问口径」（四类之一）。
+     *
+     * 与 {@see isDeclared()} 的区别：细粒度要求（权限码 / 角色）不构成口径。
+     * 判断「方法级有没有覆盖类级的口径」必须用这个，而不是 isDeclared() ——
+     * 否则一个方法级的 #[RequirePermission] 会把类级的 #[Authenticated] 整体顶掉。
+     */
+    public function hasAccessDeclaration(): bool
+    {
+        return $this->public || $this->integration || $this->apiKey || $this->authenticated;
+    }
+
+    /**
+     * 已声明的访问口径名称，按由宽到严排列。
+     *
+     * 供启动期检查判断「同一个端点声明了多个口径」这种自相矛盾的写法。
+     *
+     * @return list<string>
+     */
+    public function declaredAccessModes(): array
+    {
+        $modes = [];
+        if ($this->public) {
+            $modes[] = 'PublicAccess';
+        }
+        if ($this->integration) {
+            $modes[] = 'IntegrationAccess';
+        }
+        if ($this->apiKey) {
+            $modes[] = 'ApiKeyAccess';
+        }
+        if ($this->authenticated) {
+            $modes[] = 'Authenticated';
+        }
+
+        return $modes;
+    }
+
+    /**
+     * 与类级声明合并。
+     *
+     * 两个维度分开处理：
+     * - **访问口径** 方法级优先、回退类级 —— 四类口径描述的是「这个端点怎么进来」，
+     *   是一组互斥选项，方法级写了就整体以方法级为准；
+     * - **细粒度要求**（权限码 / 角色 / guard）取并集 —— 类级是整族的默认要求，
+     *   方法级只多不少，合并方向永远不会放松权限。
+     */
+    public function mergedWith(self $classLevel): self
+    {
+        $access = $this->hasAccessDeclaration() ? $this : $classLevel;
+
+        return new self(
+            public: $access->public,
+            integration: $access->integration,
+            apiKey: $access->apiKey,
+            authenticated: $access->authenticated,
+            permissions: array_values(array_unique([...$classLevel->permissions, ...$this->permissions])),
+            roles: array_values(array_unique([...$classLevel->roles, ...$this->roles])),
+            guard: $this->guard ?? $classLevel->guard,
+            // 模式与方法级声明保持一致；方法级没写权限码时沿用类级的模式。
+            permissionMode: $this->permissions === [] ? $classLevel->permissionMode : $this->permissionMode,
+            roleMode: $this->roles === [] ? $classLevel->roleMode : $this->roleMode,
+        );
     }
 
     /**
