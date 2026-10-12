@@ -27,6 +27,14 @@ final class SensitiveDataFilter
         'authorization',
         'cookie',
         'credential',
+        // 密钥类字段名：`api_key` / `private_key` / `signature` 不会命中上面的词，
+        // 但它们和密码一样 —— 一旦落进审计或异常快照就等于泄漏。
+        // 裸 `key` 刻意不加：它作为普通字段名太常见（cache_key、sort_key），
+        // 加进来会把大量正常字段遮掉，反而让人不敢信任脱敏结果。
+        'api_key',
+        'apikey',
+        'private_key',
+        'signature',
     ];
 
     private const MAX_DEPTH = 8;

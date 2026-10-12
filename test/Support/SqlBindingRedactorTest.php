@@ -58,6 +58,42 @@ final class SqlBindingRedactorTest extends TestCase
             [5, 'active'],
         );
 
-        $this->assertSame("SELECT * FROM users WHERE id = '5' AND status = 'active'", $result);
+        // 数字与布尔不再套引号：`id = '5'` 看起来像字符串列，读日志的人会误判列的形态。
+        $this->assertSame("SELECT * FROM users WHERE id = 5 AND status = 'active'", $result);
+    }
+
+    public function testQuestionMarkInsideStringLiteralIsNotAPlaceholder(): void
+    {
+        // SQL 里的 `?` 不都是占位符：字面量里那个若被当成占位符，后面的绑定会整体错位 ——
+        // 不仅填错位置，敏感值判定也跟着错位，本该遮住的密码会以明文落进日志。
+        $result = SqlBindingRedactor::interpolate(
+            "UPDATE users SET password_hash = ?, remark = '有?号' WHERE id = ?",
+            ['secret-hash', 7],
+        );
+
+        $this->assertSame("UPDATE users SET password_hash = '[redacted]', remark = '有?号' WHERE id = 7", $result);
+    }
+
+    public function testBindingValuesAreEscaped(): void
+    {
+        // 不转义不只是可读性问题：含换行的值能在日志里伪造出完整的假行（log injection）。
+        $result = SqlBindingRedactor::interpolate(
+            'SELECT * FROM users WHERE name = ?',
+            ["O'Brien\nDROP TABLE users"],
+        );
+
+        $this->assertStringContainsString("O\\'Brien", $result);
+        $this->assertStringContainsString('\n', $result);
+        $this->assertStringNotContainsString("\n", $result);
+    }
+
+    public function testNullAndBooleanBindingsAreNotQuoted(): void
+    {
+        $result = SqlBindingRedactor::interpolate(
+            'UPDATE users SET deleted_at = ?, enabled = ? WHERE id = ?',
+            [null, true, 3],
+        );
+
+        $this->assertSame('UPDATE users SET deleted_at = NULL, enabled = 1 WHERE id = 3', $result);
     }
 }

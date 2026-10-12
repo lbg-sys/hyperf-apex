@@ -167,6 +167,15 @@
   同时出现时后写的会把先写的顶掉，「admin 体系要权限码 + ops 体系要角色」这类声明会丢一半。
 - `EnumTrait` / `PermissionCodeTrait` 的四处英文异常信息改为中文（`Enum message is not configured
   for X::Y` 之类），并保留 `类::case` 定位 —— 与「面向使用者的异常必须中文」的约定一致。
+- **SQL 日志脱敏会漏遮**（`SqlBindingRedactor`，两处）：① 占位符按 `strpos` 顺序找，字面量里的
+  `?`（如 `WHERE note LIKE '%?%'`）被当成了占位符 —— 后续绑定整体错位，敏感值判定也跟着错位，
+  本该遮住的 `password_hash` 以明文落进日志；现在按引号状态扫描真正的占位符（含反斜杠转义）。
+  ② 展开的绑定值不做转义：`O'Brien` 输出成 `'O'Brien'`（日志失真），含换行的值能在日志里
+  伪造出完整的假行（log injection）；现在按 SQL 字面量规则转义，且 `null` / 布尔 / 数字不再
+  套引号（`id = '5'` 会让人误以为那是字符串列）。
+- `SensitiveDataFilter` 的敏感键名补上 `api_key` / `apikey` / `private_key` / `signature`：
+  这些字段名不会命中原有的 `password` / `token` / `secret` 等词，但落进审计或异常快照就是泄漏。
+  裸 `key` 刻意不加 —— 它作为普通字段名太常见（`cache_key`、`sort_key`），加进来会遮掉大量正常字段。
 
 - 控制器发现规则重写：不再要求路径里含 `/Controller/`，也不再从文件内容里用正则抽类名 ——
   前者会让放在别的目录下的控制器静默从文档里消失，后者遇到 `app/Controller/` 下的
@@ -200,6 +209,10 @@
 
 ### 变更
 
+- `OutboxPublisher::sortKeys()` 的注释说明为什么**不复用** `ArrayNormalizer::sortKeys()`：
+  两者的排序 flag 不同（`ksort` 默认 SORT_REGULAR 与 SORT_STRING 对数字字符串键的顺序不同），
+  而摘要生成后已落库成 `idempotency_key` —— 换排序规则会让同一份载荷算出不同的键，
+  已存在的事件不再被识别为重复，等于凭空多出一批重复投递。要统一必须连带处理存量数据。
 - 客户端发来的二进制帧（opcode 2）直接回「只接受文本帧」的错误信封，不再丢给 JSON 解析。
 - `WsEnvelopeDTO` 拒绝 JSON 数组形态的 `data`：此前会一路走到 payload 水合，报出来的错与真实原因无关。
 - `WsPushService::pushToRoom()` 顺手剔除房间成员中连接行已消失的连接（惰性自愈），

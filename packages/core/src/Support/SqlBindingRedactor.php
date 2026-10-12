@@ -37,20 +37,91 @@ final class SqlBindingRedactor
         }
 
         $sensitive = self::sensitivePlaceholderIndexes($sql);
-        $position = 0;
+        $offsets = self::placeholderOffsets($sql);
+        $values = array_values($bindings);
 
-        foreach (array_values($bindings) as $index => $value) {
-            $position = strpos($sql, '?', $position);
-            if ($position === false) {
+        // 从后往前替换：替换后面的不会影响前面已算好的位置。
+        for ($index = count($values) - 1; $index >= 0; --$index) {
+            if (! isset($offsets[$index])) {
                 break;
             }
 
-            $replacement = isset($sensitive[$index]) ? self::REDACTED : "'{$value}'";
-            $sql = substr_replace($sql, $replacement, $position, 1);
-            $position += strlen($replacement);
+            $replacement = isset($sensitive[$index]) ? self::REDACTED : self::quote($values[$index]);
+            $sql = substr_replace($sql, $replacement, $offsets[$index], 1);
         }
 
         return $sql;
+    }
+
+    /**
+     * 真正的占位符在 SQL 中的位置（按出现顺序），跳过字符串字面量里的 `?`。
+     *
+     * SQL 里的 `?` 不都是占位符：`WHERE note LIKE '%?%'` 里那个就是字面量内容。按 `strpos`
+     * 顺序展开会整体错位 —— 不仅后面的绑定全填错位置，敏感值判定也跟着错位，
+     * 结果是本该遮住的密码以明文落进日志。
+     *
+     * 只跟踪引号状态与反斜杠转义（覆盖 MySQL / PostgreSQL 的常见写法）；
+     * 认不出的语法按原文处理，与「失败方向偏信息更全」的取舍一致。
+     *
+     * @return list<int>
+     */
+    private static function placeholderOffsets(string $sql): array
+    {
+        $offsets = [];
+        $quote = null;
+
+        for ($index = 0, $length = strlen($sql); $index < $length; ++$index) {
+            $character = $sql[$index];
+
+            if ($quote !== null) {
+                if ($character === '\\') {
+                    ++$index;
+                    continue;
+                }
+                if ($character === $quote) {
+                    $quote = null;
+                }
+                continue;
+            }
+
+            if ($character === "'" || $character === '"' || $character === '`') {
+                $quote = $character;
+                continue;
+            }
+
+            if ($character === '?') {
+                $offsets[] = $index;
+            }
+        }
+
+        return $offsets;
+    }
+
+    /**
+     * 绑定值展开成 SQL 字面量。
+     *
+     * 转义不只是可读性问题：`O'Brien` 不转义会输出成 `'O'Brien'`（日志失真），而含换行的值
+     * 能在日志里伪造出完整的假行（log injection）—— 排查时读到的可能是假日志。
+     */
+    private static function quote(mixed $value): string
+    {
+        if ($value === null) {
+            return 'NULL';
+        }
+
+        if (is_bool($value)) {
+            return $value ? '1' : '0';
+        }
+
+        if (is_int($value) || is_float($value)) {
+            return (string) $value;
+        }
+
+        return "'" . str_replace(
+            ['\\', "'", "\n", "\r"],
+            ['\\\\', "\\'", '\n', '\r'],
+            (string) $value
+        ) . "'";
     }
 
     /**
@@ -113,9 +184,21 @@ final class SqlBindingRedactor
         return $indexes;
     }
 
-    /** 指定位置之前出现过多少个占位符，即该位置的占位符下标。 */
+    /**
+     * 指定位置之前有多少个真正的占位符，即该位置的占位符下标。
+     *
+     * 必须与 interpolate() 用同一套扫描：字面量里的 `?` 不算数，否则敏感索引会整体错位。
+     */
     private static function placeholderOrdinal(string $sql, int $offset): int
     {
-        return substr_count(substr($sql, 0, $offset), '?');
+        $ordinal = 0;
+        foreach (self::placeholderOffsets($sql) as $position) {
+            if ($position >= $offset) {
+                break;
+            }
+            ++$ordinal;
+        }
+
+        return $ordinal;
     }
 }

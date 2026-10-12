@@ -101,7 +101,16 @@ final class OutboxPublisher implements OutboxPublisherInterface
         return json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
     }
 
-    /** @param array<array-key, mixed> $value */
+    /**
+     * 递归按键排序。
+     *
+     * 刻意不复用 `ArrayNormalizer::sortKeys()`：两者对数字字符串键的排序规则不同
+     * （这里用 `ksort` 默认的 SORT_REGULAR，那里是 SORT_STRING）。摘要一旦生成就落库成了
+     * `idempotency_key`，换排序规则会让同一份载荷算出不同的键 —— 已存在的事件不再被识别为
+     * 重复，等于凭空多出一批重复投递。要统一必须连带考虑存量数据。
+     *
+     * @param array<array-key, mixed> $value
+     */
     private static function sortKeys(array &$value): void
     {
         foreach ($value as &$item) {
