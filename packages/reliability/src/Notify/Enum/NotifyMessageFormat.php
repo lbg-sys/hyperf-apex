@@ -25,10 +25,10 @@ enum NotifyMessageFormat: string implements EnumInterface
     #[Message('文本')]
     case TEXT = 'text';
 
-    #[Message('markdown')]
+    #[Message('Markdown（支持内联 @）')]
     case MARKDOWN = 'markdown';
 
-    #[Message('markdown_v2')]
+    #[Message('Markdown V2（不支持 @）')]
     case MARKDOWN_V2 = 'markdown_v2';
 
     #[Message('图片')]

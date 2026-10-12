@@ -221,6 +221,9 @@
   `GaugeCollectorRegistry` 的缓存 TTL 是「时长」而不是「时间点」，改用单调时钟（墙上时钟回拨
   不会让缓存提前失效）；`RateLimiter::nowMilliseconds()` 则必须与其它 worker 的窗口边界对齐，
   仍用墙上时钟，只是改走 `Time::now()`。
+- `NotifyMessageFormat::MARKDOWN` / `MARKDOWN_V2` 的 `#[Message]` 是英文（`markdown` /
+  `markdown_v2`），而这两个值会作为逐 case 说明出现在文档与常量导出里 —— 全仓唯一两处非中文的
+  枚举说明。现在改成中文，并带上两者最关键的区别（是否支持内联 `@`）。
 - `hyperf-apex/reliability` 已发布迁移里的 `->useCurrent()` 保持不变：它们随 2.0.0 发布，
   按约定不再修改；运行时的写入路径已由 `AbstractRepository` 与模型统一补时间。
 
@@ -235,6 +238,10 @@
 
 ### 新增
 
+- `test/Enum/EnumConformanceTest.php`：按目录扫描（而不是硬编码清单）断言每个枚举都是 backed enum、
+  实现 `EnumInterface`、`use EnumTrait`、带 `#[Constants]`、且每个 case 的 `#[Message]` 都是中文。
+  仓库里的 12 个枚举此前已全部合规，这条断言让新增枚举无法绕过；扫描数量带下限断言，
+  包目录或命名空间映射变了会立刻失败，而不是悄悄空转。
 - `hyperf-apex/core` 新增 `publish/integration.php`：`integration.integration_token` 一直被
   `IntegrationTokenMiddleware` 读取，但没有任何配置模板承载它 —— 应用只能从源码里猜这个键，
   而漏配的表现是集成接口直接抛「集成凭证未配置」（报错里现在已带上键名）。
