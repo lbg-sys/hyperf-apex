@@ -80,6 +80,10 @@ final class DTORuleFactory
                     $fieldRules[] = 'nullable';
                 }
             }
+            // 联合 / 交集类型（`int|string`）不生成类型规则：JSON 层没有单一类型能表达它，
+            // 而文档侧用 oneOf 描述、水合按声明逐个尝试 —— 在这里补一条规则只会与其中一侧打架。
+            // 代价是类型不符的值会走到构造器边界（TypeError → 500）而不是 422；
+            // 需要 422 就用单一类型，或给这个字段挂一个自定义校验规则。
             foreach ($property->validationAttributes as $attribute) {
                 $instance = $attribute->newInstance();
                 array_push($fieldRules, ...$instance->validationRules());
