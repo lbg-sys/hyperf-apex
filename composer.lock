@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "8e004232e7be10292eb0a786a330de54",
+    "content-hash": "f1f3d9e6d3f7ee92de8fa3655f0a1a2f",
     "packages": [
         {
             "name": "carbonphp/carbon-doctrine-types",
@@ -395,7 +395,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "3.0.x-dev"
+                    "dev-master": "4.0.x-dev"
                 }
             },
             "autoload": {
@@ -888,10 +888,10 @@
             "dist": {
                 "type": "path",
                 "url": "packages/apidoc",
-                "reference": "6dddecc78784fb437a38369325823b76a10f06d9"
+                "reference": "98fb0fc7748dfd4581e1fcea393e3733354e8920"
             },
             "require": {
-                "hyperf-apex/core": "^3.0",
+                "hyperf-apex/core": "^4.0",
                 "php": ">=8.4",
                 "symfony/yaml": "^7.4",
                 "zircote/swagger-php": "^6.12"
@@ -899,8 +899,8 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "3.0.x-dev",
-                    "dev-main": "3.0.x-dev"
+                    "dev-master": "4.0.x-dev",
+                    "dev-main": "4.0.x-dev"
                 },
                 "hyperf": {
                     "config": "Hyperf\\Apex\\ApiDoc\\ConfigProvider"
@@ -942,19 +942,19 @@
             "dist": {
                 "type": "path",
                 "url": "packages/apidoc-apifox",
-                "reference": "21bdac07e389a24a44954e99c33dd1e0f8541094"
+                "reference": "c777165336070e8137eaac807c090ea8058bdbee"
             },
             "require": {
-                "hyperf-apex/apidoc": "^3.0",
-                "hyperf-apex/core": "^3.0",
-                "hyperf-apex/websocket": "^3.0",
+                "hyperf-apex/apidoc": "^4.0",
+                "hyperf-apex/core": "^4.0",
+                "hyperf-apex/websocket": "^4.0",
                 "php": ">=8.4"
             },
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "3.0.x-dev",
-                    "dev-main": "3.0.x-dev"
+                    "dev-master": "4.0.x-dev",
+                    "dev-main": "4.0.x-dev"
                 },
                 "hyperf": {
                     "config": "Hyperf\\Apex\\ApiDoc\\Apifox\\ConfigProvider"
@@ -998,7 +998,7 @@
             "dist": {
                 "type": "path",
                 "url": "packages/core",
-                "reference": "5dc9a830f2781afcee9057cc438e1bd197f24d6f"
+                "reference": "759c63d217824cb4cfaaa67dcc9db1443634ea0e"
             },
             "require": {
                 "hyperf/command": "~3.2.0",
@@ -1030,8 +1030,8 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "3.0.x-dev",
-                    "dev-main": "3.0.x-dev"
+                    "dev-master": "4.0.x-dev",
+                    "dev-main": "4.0.x-dev"
                 },
                 "hyperf": {
                     "config": "Hyperf\\Apex\\ConfigProvider"
@@ -1074,10 +1074,10 @@
             "dist": {
                 "type": "path",
                 "url": "packages/metrics",
-                "reference": "d0321499aca44e05aa4f2caea5f9d786396af439"
+                "reference": "ceadbb40548bb1094bcf1f006d505f6014e29801"
             },
             "require": {
-                "hyperf-apex/core": "^3.0",
+                "hyperf-apex/core": "^4.0",
                 "hyperf/memory": "~3.2.0",
                 "php": ">=8.4"
             },
@@ -1087,8 +1087,8 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "3.0.x-dev",
-                    "dev-main": "3.0.x-dev"
+                    "dev-master": "4.0.x-dev",
+                    "dev-main": "4.0.x-dev"
                 },
                 "hyperf": {
                     "config": "Hyperf\\Apex\\Metrics\\ConfigProvider"
@@ -1131,10 +1131,10 @@
             "dist": {
                 "type": "path",
                 "url": "packages/reliability",
-                "reference": "685bb20978653293d85bc22e02b1fb57e2e77f70"
+                "reference": "692d961480caf0a5f9e99a990f27a92ee805a713"
             },
             "require": {
-                "hyperf-apex/core": "^3.0",
+                "hyperf-apex/core": "^4.0",
                 "hyperf/database": "~3.2.0",
                 "hyperf/guzzle": "~3.2.0",
                 "hyperf/redis": "~3.2.0",
@@ -1146,8 +1146,8 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "3.0.x-dev",
-                    "dev-main": "3.0.x-dev"
+                    "dev-master": "4.0.x-dev",
+                    "dev-main": "4.0.x-dev"
                 },
                 "hyperf": {
                     "config": "Hyperf\\Apex\\Reliability\\ConfigProvider"
@@ -1195,18 +1195,18 @@
             "dist": {
                 "type": "path",
                 "url": "packages/websocket",
-                "reference": "e1fcab95051d8e6eb35b98c15ac7968c0d2fe55d"
+                "reference": "a8a8ca9c8d39ce0af51da1cc9c380c94f66a63c2"
             },
             "require": {
-                "hyperf-apex/core": "^3.0",
+                "hyperf-apex/core": "^4.0",
                 "hyperf/websocket-server": "^3.2",
                 "php": ">=8.4"
             },
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "3.0.x-dev",
-                    "dev-main": "3.0.x-dev"
+                    "dev-master": "4.0.x-dev",
+                    "dev-main": "4.0.x-dev"
                 },
                 "hyperf": {
                     "config": "Hyperf\\Apex\\WebSocket\\ConfigProvider"
@@ -4616,7 +4616,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "3.0.x-dev"
+                    "dev-master": "4.0.x-dev"
                 }
             },
             "autoload": {
@@ -4826,7 +4826,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "3.0.x-dev"
+                    "dev-master": "4.0.x-dev"
                 }
             },
             "autoload": {
@@ -7787,7 +7787,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "3.0.x-dev"
+                    "dev-master": "4.0.x-dev"
                 }
             },
             "autoload": {
