@@ -10,10 +10,11 @@ use Hyperf\Apex\Http\ArgumentResolver\RequestDataHydrator;
 use Hyperf\Apex\Security\Contract\PrincipalContextInterface;
 use Hyperf\Apex\Security\Principal;
 use Hyperf\Apex\Test\Support\StubLoggerFactory;
+use Hyperf\Apex\Test\WebSocket\Support\FakeWsConnectionStore;
 use Hyperf\Apex\Test\WebSocket\Support\WsAnnotationRegistrar;
-use Hyperf\Apex\WebSocket\Contract\WsConnectionStoreInterface;
 use Hyperf\Apex\WebSocket\DTO\WsSubscriptionResultDTO;
 use Hyperf\Apex\WebSocket\Protocol\WsBuiltinEvent;
+use Hyperf\Apex\WebSocket\RateLimit\WsConnectionRateLimiter;
 use Hyperf\Apex\WebSocket\Registry\WsHandlerRegistry;
 use Hyperf\Apex\WebSocket\Service\WsDispatcher;
 use Hyperf\Apex\WebSocket\Session\WsRequestContext;
@@ -94,6 +95,51 @@ final class WsDispatcherTest extends TestCase
 
         $this->assertSame(ErrorCode::INVALID_ARGUMENT->value, $response->code);
         $this->assertStringContainsString('由服务端发出', $response->message);
+    }
+
+    public function testJsonArrayDataIsRejected(): void
+    {
+        // JSON 数组与 JSON 对象解码后都是 PHP 数组：形状校验必须在这里做完，
+        // 否则会一路走到 payload 水合，报出来的错与真实原因完全不相干。
+        $response = $this->dispatcher()->dispatch($this->session(), '{"event":"sys.ping","data":[1,2]}');
+
+        $this->assertSame(ErrorCode::INVALID_ARGUMENT->value, $response->code);
+        $this->assertSame('消息 data 必须是 JSON 对象。', $response->message);
+    }
+
+    public function testMessageBurstIsRejectedByRateLimit(): void
+    {
+        // 限流只回错误信封、不断连：重连解决不了刷消息，断连反而会放大重连风暴。
+        $dispatcher = $this->dispatcher(null, ['rate_limit' => ['window_seconds' => 3600, 'max_messages' => 1]]);
+
+        $first = $dispatcher->dispatch($this->session(), '{"id":"1","event":"sys.ping"}');
+        $this->assertSame(ErrorCode::SUCCESS->value, $first->code);
+
+        $second = $dispatcher->dispatch($this->session(), '{"id":"2","event":"sys.ping"}');
+        $this->assertSame(ErrorCode::TOO_MANY_REQUESTS->value, $second->code);
+        $this->assertSame(WsBuiltinEvent::ERROR->value, $second->event);
+        $this->assertStringContainsString('过于频繁', $second->message);
+    }
+
+    public function testRateLimitIsCountedPerConnection(): void
+    {
+        $dispatcher = $this->dispatcher(null, ['rate_limit' => ['window_seconds' => 3600, 'max_messages' => 1]]);
+
+        $dispatcher->dispatch($this->session(), '{"id":"1","event":"sys.ping"}');
+
+        // 另一条连接有独立的窗口：限流按 connectionId 计数，不能被别人的流量带累。
+        $other = WsSession::open('ws', 2, '/ws/hub', null, 1_700_000_000);
+        $response = $dispatcher->dispatch($other, '{"id":"1","event":"sys.ping"}');
+
+        $this->assertSame(ErrorCode::SUCCESS->value, $response->code);
+    }
+
+    public function testRateLimitCanBeDisabled(): void
+    {
+        $dispatcher = $this->dispatcher(null, ['rate_limit' => ['window_seconds' => 3600, 'max_messages' => 0]]);
+
+        $this->assertSame(ErrorCode::SUCCESS->value, $dispatcher->dispatch($this->session(), '{"event":"sys.ping"}')->code);
+        $this->assertSame(ErrorCode::SUCCESS->value, $dispatcher->dispatch($this->session(), '{"event":"sys.ping"}')->code);
     }
 
     public function testUnknownEventIsRejected(): void
@@ -274,7 +320,7 @@ final class WsDispatcherTest extends TestCase
         $this->assertSame('4', $response->id);
     }
 
-    /** @param array<string, int> $config */
+    /** @param array<string, mixed> $config */
     private function dispatcher(
         ?FakeWsConnectionStore $store = null,
         array $config = [],
@@ -282,6 +328,11 @@ final class WsDispatcherTest extends TestCase
         ?ContainerInterface $container = null,
     ): WsDispatcher {
         $translator = new Translator(new FileLoader(new Filesystem(), BASE_PATH . '/runtime/lang'), 'zh_CN');
+        $configObject = new Config(['websocket' => array_merge([
+            'max_rooms_per_connection' => 20,
+            // 用例里的消息样本只有个位数，窗口给大一点即可保证「同一窗口」这件事是确定的。
+            'rate_limit' => ['window_seconds' => 3600, 'max_messages' => 1000],
+        ], $config)]);
 
         return new WsDispatcher(
             new WsHandlerRegistry(),
@@ -300,7 +351,8 @@ final class WsDispatcherTest extends TestCase
                     return false;
                 }
             },
-            new Config(['websocket' => array_merge(['max_rooms_per_connection' => 20], $config)]),
+            $configObject,
+            new WsConnectionRateLimiter($configObject),
             StubLoggerFactory::create(),
         );
     }
@@ -313,78 +365,6 @@ final class WsDispatcherTest extends TestCase
     private function principal(): Principal
     {
         return new Principal(userId: 7, userType: 'admin', username: 'tester', sessionId: 'session-id');
-    }
-}
-
-final class FakeWsConnectionStore implements WsConnectionStoreInterface
-{
-    public bool $joinRoomResult = true;
-
-    public ?RuntimeException $joinRoomThrowable = null;
-
-    /** @var list<array{0: string, 1: string}> */
-    public array $joined = [];
-
-    /** @var list<array{0: string, 1: string}> */
-    public array $left = [];
-
-    public function register(WsSession $session): void
-    {
-    }
-
-    public function unregister(string $connectionId): void
-    {
-    }
-
-    public function connectionsByUser(string $userType, int $userId): array
-    {
-        return [];
-    }
-
-    public function connectionsByRoom(string $room): array
-    {
-        return [];
-    }
-
-    public function connectionsByEndpoint(string $endpoint): array
-    {
-        return [];
-    }
-
-    public function allConnections(): array
-    {
-        return [];
-    }
-
-    public function countConnections(): int
-    {
-        return 0;
-    }
-
-    public function countUsers(): int
-    {
-        return 0;
-    }
-
-    public function countRooms(): int
-    {
-        return 0;
-    }
-
-    public function joinRoom(string $connectionId, string $room): bool
-    {
-        if ($this->joinRoomThrowable !== null) {
-            throw $this->joinRoomThrowable;
-        }
-
-        $this->joined[] = [$connectionId, $room];
-
-        return $this->joinRoomResult;
-    }
-
-    public function leaveRoom(string $connectionId, string $room): void
-    {
-        $this->left[] = [$connectionId, $room];
     }
 }
 

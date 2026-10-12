@@ -19,6 +19,8 @@ use Hyperf\Apex\Reliability\ConfigProvider as ReliabilityConfigProvider;
 use Hyperf\Apex\WebSocket\ConfigProvider as WebSocketConfigProvider;
 use Hyperf\Apex\WebSocket\Listener\WsDeclarationCheckListener;
 use Hyperf\Apex\WebSocket\Listener\WsGatewayRegisterListener;
+use Hyperf\Apex\WebSocket\Listener\WsIdleConnectionRecycleListener;
+use Hyperf\Apex\WebSocket\Listener\WsRuntimeCheckListener;
 use Hyperf\Apex\WebSocket\Listener\WsTableInitListener;
 use PHPUnit\Framework\TestCase;
 
@@ -78,6 +80,20 @@ final class ConfigProviderTest extends TestCase
         $this->assertContains(WsTableInitListener::class, $config['listeners'] ?? []);
         $this->assertContains(WsGatewayRegisterListener::class, $config['listeners'] ?? []);
         $this->assertContains(WsDeclarationCheckListener::class, $config['listeners'] ?? []);
+        $this->assertContains(WsRuntimeCheckListener::class, $config['listeners'] ?? []);
+        $this->assertContains(WsIdleConnectionRecycleListener::class, $config['listeners'] ?? []);
+
+        // 两个检查器必须早于注册器：注册器里的扫描失败会直接抛异常，排在它后面的检查永远执行不到，
+        // 「声明错误一次性汇总」就退化成一轮一轮地改。
+        $listeners = array_values($config['listeners'] ?? []);
+        $this->assertLessThan(
+            (int) array_search(WsGatewayRegisterListener::class, $listeners, true),
+            (int) array_search(WsDeclarationCheckListener::class, $listeners, true),
+        );
+        $this->assertLessThan(
+            (int) array_search(WsGatewayRegisterListener::class, $listeners, true),
+            (int) array_search(WsRuntimeCheckListener::class, $listeners, true),
+        );
 
         foreach ($config['publish'] ?? [] as $item) {
             $this->assertDirectoryExists($item['source']);
