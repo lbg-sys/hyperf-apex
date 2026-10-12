@@ -17,7 +17,7 @@
 ## 仓库结构与包边界
 
 - 目录约定：`packages/{package}/src/` 放源码（PSR-4 与包内 `composer.json` 的 `autoload` 一致）、`packages/{package}/publish/` 放 `vendor:publish` 出去的配置与迁移模板、`test/` 放用例（按包分子目录）；根目录元包 `hyperf-apex/apex` 聚合全部组件。
-- 包名与命名空间不总是一对一：`hyperf-apex/reliability` 一个包内含 `Hyperf\Apex\RateLimit\`、`Hyperf\Apex\Idempotency\`、`Hyperf\Apex\Outbox\`、`Hyperf\Apex\Notify\`、`Hyperf\Apex\Outbound\` 多个命名空间。
+- 包名与命名空间不总是一对一：`hyperf-apex/reliability` 一个包内含 `Hyperf\Apex\RateLimit\`、`Hyperf\Apex\Idempotency\`、`Hyperf\Apex\Outbox\`、`Hyperf\Apex\Notify\`、`Hyperf\Apex\Outbound\` 多个命名空间。其中 `RateLimit\` 与 `Idempotency\` **跨两个包**：声明侧契约（`RateLimitRule`、`RateLimitRuleReader`、`RateLimitScopes`、`#[RateLimit]`、`#[Idempotent]`）在 `packages/core`，只依赖 core 的包可以直接引用；运行时实现（限流器、中间件、幂等仓储）在 `packages/reliability`。判断「某个 `use` 是否跨包」时按类的实际物理位置，不要按命名空间前缀。
 - 依赖方向：`packages/core` 只依赖 Hyperf 基础组件，不得依赖其它 Apex 包；其余包按需依赖 `core`。包之间只允许单向依赖，不得成环。
 - **`src/` 里 `use` 了别的包，就必须在包内 `composer.json` 的 `require` 里写出来**。本仓库是 monorepo，根 autoload 让所有包互相可见，漏声明在仓库内跑得通、独立安装却会「Class not found」—— README 的「按需引入」正是靠这条成立。
 - 新增包必须：`composer.json` 声明 `license: Apache-2.0` 并提供 `ConfigProvider`（注册 `annotations.scan.paths` 与 `publish`），同时在根 `composer.json` 的 `repositories`、元包 `require` 与 `extra.hyperf.config` 中登记。
