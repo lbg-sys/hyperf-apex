@@ -104,7 +104,7 @@ php bin/hyperf.php vendor:publish hyperf-apex/metrics --id=config
 | `error` | 异常与错误：`AppExceptionHandler`、请求异常快照、Outbox 投递、WebSocket |
 | `shared` | 限流：`RateLimiter`、`RateLimitMiddleware` |
 | `outbound` | 第三方出站调用：`OutboundHttpClient` |
-| `sql` | SQL 日志：`sql_log.enabled=true` 时的 `DbQueryExecutedListener` |
+| `sql` | SQL 日志：`DbQueryExecutedListener`（记录量级由 `sql_log.full` / `slow_ms` / `writes` 控制） |
 | `access` | 访问日志：`RequestTimingMiddleware`（与 `access_log` 配置配套） |
 
 这些通道名不在 Hyperf 骨架的默认配置里，所以有两件事要知道：
@@ -170,8 +170,8 @@ final class HubEventHandler
 
 ### 3. 鉴权
 
-- **集成凭证**：入口中间件挂 `WsIntegrationHandshakeMiddleware`，token 走 query 参数 `token`（浏览器 WebSocket API 无法自定义请求头）。**token 会因此出现在网关与访问日志里**，部署时应在网关层屏蔽该参数的记录。
-- **用户身份**：组件不内置登录态鉴权（它属于应用的身份体系）。应用自建握手中间件，校验通过后调用 `WsHandshakeContext::setPrincipal($principal)` 交出身份，入口会在 `onOpen` 时把它组装进会话；token 解析可复用 `WsBearerToken::token()`。
+- **集成凭证**：入口中间件挂 `WsIntegrationHandshakeMiddleware`，token 走 query 参数 `token`（浏览器 WebSocket API 无法自定义请求头），与 HTTP 侧的 `#[IntegrationAccess]` 共用同一个 `integration.integration_token` 配置、同一套判据。**token 会因此出现在网关与访问日志里**，部署时应在网关层屏蔽该参数的记录。
+- **用户身份**：组件不内置登录态鉴权（它属于应用的身份体系）。应用自建握手中间件，校验通过后调用 `WsHandshakeContext::setPrincipal($principal)` 交出身份，入口会在 `onOpen` 时把它组装进会话；token 解析可复用 `WsBearerToken::token($request, 'token')`（第二个参数是 query 参数名）。
 - 校验失败必须发生在 `onOpen` 之前（中间件里抛 `BusinessException` 即可），否则会出现「连接已建立但没有身份」的中间态。
 
 ### 4. 推送
@@ -187,7 +187,7 @@ final class HubEventHandler
 | 服务端 → 客户端（响应） | `{"id": "1", "event": "demo.created", "code": 0, "message": "成功", "data": {...}}` |
 | 服务端 → 客户端（推送） | `{"id": "...", "event": "demo.created", "type": "push", "data": {...}}` |
 
-内置事件：`sys.ping`（心跳，客户端定期发）、`sys.pong`、`sys.subscribe` / `sys.unsubscribe`（房间订阅，`data.room` 为 1-64 位 `[A-Za-z0-9_.:-]`）。
+内置事件：`sys.ping`（心跳，客户端定期发）、`sys.pong`、`sys.subscribe` / `sys.unsubscribe`（房间订阅，`data.room` 为 1-64 位 `[A-Za-z0-9_.:-]`）、`sys.error`（所有失败信封的 `event`）。
 
 约定：
 

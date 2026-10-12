@@ -277,6 +277,14 @@
 
 ### 变更
 
+- **README 与代码对账**（逐条核对 30 余处承诺）修正三处失实描述：`sql_log.enabled` 这个键
+  并不存在（监听器无条件注册，量级实际由 `sql_log.full` / `slow_ms` / `writes` 控制）；
+  内置事件列表漏了 `sys.error`（所有失败信封都用它作为 `event`）；WebSocket 鉴权一节没写清
+  集成 token 的来源 —— 它与 HTTP 侧 `#[IntegrationAccess]` 共用同一个
+  `integration.integration_token`，`WsBearerToken::token()` 也补上了真实签名（两个参数）。
+  其余承诺（发布 ID、`/metrics` 与 `/metrics/dashboard` 端点、`idle_timeout` 默认 180、
+  限流 1 秒 50 条、超限码 `10007`、启动检查的三个键、`WsPusherInterface` 的四个方法、
+  协议字段与推送 `type: push`、房间名规则、只读仓命名、`CONTRIBUTING.md`）都与代码一致。
 - 删除 `hyperf-apex/core` 的 `publish/health.php`：它唯一的键 `health.redis_pool` 全仓没有任何
   读取点，注释却承诺「就绪探针（`/health/ready`）探测的 Redis 连接池」—— 而这个端点在仓库里
   根本不存在（`access_log` 里默认排除 `/health/*` 的规则说明它曾被规划过，那条排除保留：
