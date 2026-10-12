@@ -11,6 +11,7 @@
 /packages             export-ignore
 /test                 export-ignore
 /AGENTS.md            export-ignore
+/composer.lock        export-ignore
 /phpstan-bootstrap.php export-ignore
 /phpstan.neon.dist    export-ignore
 /phpunit.xml.dist     export-ignore
