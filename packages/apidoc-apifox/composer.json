@@ -24,9 +24,9 @@
     ],
     "require": {
         "php": ">=8.4",
-        "hyperf-apex/core": "^4.0",
-        "hyperf-apex/apidoc": "^4.0",
-        "hyperf-apex/websocket": "^4.0"
+        "hyperf-apex/core": "^0.1",
+        "hyperf-apex/apidoc": "^0.1",
+        "hyperf-apex/websocket": "^0.1"
     },
     "autoload": {
         "psr-4": {
@@ -35,8 +35,8 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-master": "4.0.x-dev",
-            "dev-main": "4.0.x-dev"
+            "dev-master": "0.1.x-dev",
+            "dev-main": "0.1.x-dev"
         },
         "hyperf": {
             "config": "Hyperf\\Apex\\ApiDoc\\Apifox\\ConfigProvider"

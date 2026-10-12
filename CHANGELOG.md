@@ -1,16 +1,15 @@
 # 更新日志
 
-本文件记录 `hyperf-apex/*` 各组件包的对外变更，格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
-版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
+本文件记录 `hyperf-apex/*` 各组件包的对外变更，格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
+当前处于 0.x 初始开发阶段：API 与数据表结构不保证稳定，破坏性改动不抬主版本号；进入 1.0.0 后才按语义化版本。
 
-## [4.1.0] - 2026-10-12
+## [0.1.0] - 2026-10-12
 
-本次含破坏性变更（见下）。按语义化版本本应抬主版本号，但本套件刚发布 v4.0.1、尚无使用者，
-抬主版本意味着把 6 个包的包间约束与 branch-alias 全量改到 `^5.0` 并刷新 `composer.lock` ——
-对零使用者没有收益，因此随次版本发布（发布闸门以主版本为判据，v4.1.0 通过）。
-**此后**再做破坏性改动必须走主版本。
+**首个预发布版本。** 此前仓库曾以 `1.0.0`～`4.1.0` 打过内部开发 tag（尚未对外使用，已删除），
+本版本把那段开发史归并为 0.x 的起点。0.x 阶段破坏性改动不抬主版本号，进入 1.0.0 之后才有兼容承诺。
+下文「内部迭代」小节是那些已废弃版本号的原始变更，仅作追溯，不作为版本历史。
 
-### 破坏性变更
+### 接口与行为调整
 
 - `Hyperf\Apex\WebSocket\Contract\WsConnectionStoreInterface` 的房间相关方法
   （`joinRoom()` / `leaveRoom()` / `connectionsByRoom()` / `countRooms()`）迁到新增的
@@ -71,7 +70,7 @@
 - `ApifoxDocumentBuilder` 在没有任何入口时直接报错，而不是产出空的 `webSocketCollection`
   （导入方会把它读成「本来就没有长连接接口」）。
 
-## [4.0.1] - 2026-10-12
+## 内部迭代 · 原 4.0.1（已废弃，存档）
 
 ### 新增
 
@@ -91,7 +90,7 @@
 - 4 条命令描述里有 3 条是英文（`api-doc:generate`、`api-doc:generate-apifox`、`outbox:prune`），
   改为中文与 `schema:model-check` 对齐 —— 它们会出现在 `bin/hyperf.php list` 的输出里。
 
-## [4.0.0] - 2026-10-12
+## 内部迭代 · 原 4.0.0（已废弃，存档）
 
 ### 破坏性变更
 
@@ -422,7 +421,7 @@
 - 修正 `AGENTS.md` 里命名空间归属的描述：`Hyperf\Apex\RateLimit\` 与 `Hyperf\Apex\Idempotency\`
   的**声明侧契约**在 `packages/core`（只有运行时实现在 `reliability`），照旧描述会把跨包引用误判成漏声明。
 
-## [3.0.0] - 2026-10-12
+## 内部迭代 · 原 3.0.0（已废弃，存档）
 
 本次为破坏性版本：清除从多端 SaaS 业务工程带入组件库的租户 / 代理商 / 系统端 / 设备端领域概念，
 以及源码注释、配置模板与文档中残留的具体业务示例，组件只保留中性机制。应用侧升级前请先读「破坏性变更」。
@@ -444,7 +443,7 @@
   `hyperf-apex/websocket` 不再内置任何入口，应用需自己声明 `#[WsGateway]` 入口 —— 否则启动期校验会报
   「至少需要一个 #[WsGateway] 入口」。
 
-## [2.0.0] - 2026-10-10
+## 内部迭代 · 原 2.0.0（已废弃，存档）
 
 本次为破坏性版本：解除 `hyperf-apex/apidoc` 对 websocket / reliability 的硬依赖，并把限流、幂等中间件
 从 `core` 迁回 `reliability`。应用侧升级前请先读「破坏性变更」与「应用侧需要手工同步」。
@@ -491,7 +490,7 @@
 
 - 维护者：`SPLIT_TOKEN` 现在需要对 6 个只读仓有写权限（新增 `lbg-sys/hyperf-apex-apidoc-apifox`）。
 
-## [1.0.0] - 2026-10-10
+## 内部迭代 · 原 1.0.0（已废弃，存档）
 
 ### 新增
 
@@ -509,7 +508,3 @@
 
 - 已发布出去的迁移文件与 `publish/` 模板不得再修改或重命名，只能追加新迁移；修改模板默认值只影响
   之后重新发布的应用，需在本文件中写明应用侧需要手工同步哪一项。
-
-[Unreleased]: https://github.com/lbg-sys/hyperf-apex/compare/v2.0.0...master
-[2.0.0]: https://github.com/lbg-sys/hyperf-apex/compare/v1.0.0...v2.0.0
-[1.0.0]: https://github.com/lbg-sys/hyperf-apex/releases/tag/v1.0.0

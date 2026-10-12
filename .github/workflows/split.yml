@@ -18,7 +18,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 要拆分的 tag（例如 v3.0.0），必须是本仓库已存在的 tag
+        description: 要拆分的 tag（例如 v0.1.0），必须是本仓库已存在的 tag
         required: true
         type: string
 

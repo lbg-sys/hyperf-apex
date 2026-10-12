@@ -55,8 +55,8 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-master": "4.0.x-dev",
-            "dev-main": "4.0.x-dev"
+            "dev-master": "0.1.x-dev",
+            "dev-main": "0.1.x-dev"
         },
         "hyperf": {
             "config": "Hyperf\\Apex\\ConfigProvider"
