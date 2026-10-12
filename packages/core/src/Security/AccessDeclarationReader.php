@@ -63,6 +63,7 @@ final class AccessDeclarationReader
         $permissions = [];
         $roles = [];
         $guard = null;
+        $roleGuard = null;
         $permissionMode = AccessDeclaration::MODE_AND;
         $roleMode = AccessDeclaration::MODE_AND;
 
@@ -100,7 +101,9 @@ final class AccessDeclarationReader
                         $roles[] = $r;
                     }
                     if ($instance->guard !== null) {
-                        $guard = $instance->guard;
+                        // 角色的守卫单独记：与权限码共用一个字段时，后写的那一个会把先写的顶掉，
+                        // 「admin 体系要权限码 + ops 体系要角色」这种声明会丢一半。
+                        $roleGuard = $instance->guard;
                     }
                     $roleMode = $instance->mode;
                     break;
@@ -117,6 +120,7 @@ final class AccessDeclarationReader
             guard: $guard,
             permissionMode: $permissionMode,
             roleMode: $roleMode,
+            roleGuard: $roleGuard,
         );
     }
 }

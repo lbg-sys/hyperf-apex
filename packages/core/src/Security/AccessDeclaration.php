@@ -20,9 +20,11 @@ final readonly class AccessDeclaration
     /**
      * @param list<string> $permissions 需要的权限码标识列表
      * @param list<string> $roles 需要的角色标识列表
-     * @param null|string $guard 权限所属的守卫标识，取值由应用自行定义
+     * @param null|string $guard 权限码所属的守卫标识，取值由应用自行定义
      * @param string $permissionMode 权限码的校验模式（AND / OR），透传给应用判定
      * @param string $roleMode 角色的校验模式（AND / OR），透传给应用判定
+     * @param null|string $roleGuard 角色所属的守卫标识（与权限码分开：同一端点完全可能
+     *                               在 admin 体系里要权限码、在 ops 体系里要角色）
      */
     public function __construct(
         public bool $public = false,
@@ -34,6 +36,7 @@ final readonly class AccessDeclaration
         public ?string $guard = null,
         public string $permissionMode = self::MODE_AND,
         public string $roleMode = self::MODE_AND,
+        public ?string $roleGuard = null,
     ) {
     }
 
@@ -104,6 +107,7 @@ final readonly class AccessDeclaration
             permissions: array_values(array_unique([...$classLevel->permissions, ...$this->permissions])),
             roles: array_values(array_unique([...$classLevel->roles, ...$this->roles])),
             guard: $this->guard ?? $classLevel->guard,
+            roleGuard: $this->roleGuard ?? $classLevel->roleGuard,
             // 模式与方法级声明保持一致；方法级没写权限码时沿用类级的模式。
             permissionMode: $this->permissions === [] ? $classLevel->permissionMode : $this->permissionMode,
             roleMode: $this->roles === [] ? $classLevel->roleMode : $this->roleMode,

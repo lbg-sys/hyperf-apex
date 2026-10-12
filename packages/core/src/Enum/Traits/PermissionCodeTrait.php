@@ -37,7 +37,7 @@ trait PermissionCodeTrait
         $attribute = $case->getAttributes(BelongsToGroup::class)[0] ?? null;
         if ($attribute === null) {
             throw new UnexpectedValueException(sprintf(
-                'Permission group is not configured for %s::%s.',
+                '权限枚举 %s::%s 的 case 缺少 #[BelongsToGroup] 标注。',
                 static::class,
                 $this->name
             ));

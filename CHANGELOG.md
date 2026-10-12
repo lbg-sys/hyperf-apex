@@ -162,6 +162,11 @@
   （静默收紧，权限要求比声明更严）。现在透传给应用判定。
 - `PermissionSet::codes()` 保证返回字符串：形如十进制整数的权限码会被 PHP 规整成 int 键，
   混进 `list<string>` 会让严格比较的下游踩坑。
+- 权限码与角色的守卫标识拆成两个字段（`AccessDeclaration::$guard` / `$roleGuard`）：
+  此前共用一个字段，`#[RequirePermission(guard: 'admin')]` 与 `#[RequireRole(guard: 'ops')]`
+  同时出现时后写的会把先写的顶掉，「admin 体系要权限码 + ops 体系要角色」这类声明会丢一半。
+- `EnumTrait` / `PermissionCodeTrait` 的四处英文异常信息改为中文（`Enum message is not configured
+  for X::Y` 之类），并保留 `类::case` 定位 —— 与「面向使用者的异常必须中文」的约定一致。
 
 - 控制器发现规则重写：不再要求路径里含 `/Controller/`，也不再从文件内容里用正则抽类名 ——
   前者会让放在别的目录下的控制器静默从文档里消失，后者遇到 `app/Controller/` 下的

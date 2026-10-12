@@ -34,6 +34,12 @@ class InheritedAccessController
     public function anyOfPermissions(): void
     {
     }
+
+    #[RequirePermission('record:read', guard: 'admin')]
+    #[RequireRole('operator', guard: 'ops')]
+    public function dualGuards(): void
+    {
+    }
 }
 
 /** 口径声明在父类上，动作写在子类里。 */
@@ -234,6 +240,16 @@ final class SecurityTest extends TestCase
 
         $this->assertSame('item:read', $permission->identifier());
         $this->assertSame(TestGroup::GENERAL, $permission->group());
+    }
+
+    public function testPermissionAndRoleGuardsAreKeptApart(): void
+    {
+        // 权限码与角色可以属于不同的权限体系：此前共用一个字段，后写的那一个会把先写的顶掉，
+        // 「admin 体系要权限码 + ops 体系要角色」这种声明会丢一半。
+        $declaration = $this->declaration(InheritedAccessController::class, 'dualGuards');
+
+        $this->assertSame('admin', $declaration->guard);
+        $this->assertSame('ops', $declaration->roleGuard);
     }
 
     private function declaration(string $class, string $method): AccessDeclaration

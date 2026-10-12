@@ -96,7 +96,7 @@ trait EnumTrait
         $attribute = $case->getAttributes(Message::class)[0] ?? null;
         if ($attribute === null) {
             throw new UnexpectedValueException(sprintf(
-                'Enum message is not configured for %s::%s.',
+                '枚举 %s::%s 的 case 缺少 #[Message] 标注（每个 case 都要有中文说明）。',
                 static::class,
                 $this->name
             ));
@@ -144,12 +144,12 @@ trait EnumTrait
 
         $type = (new ReflectionEnum(static::class))->getBackingType();
         if ($type === null) {
-            throw new LogicException(sprintf('%s must be a backed enum.', static::class));
+            throw new LogicException(sprintf('%s 必须是 backed enum（值只能是 int 或 string）。', static::class));
         }
 
         $name = $type->getName();
         if ($name !== 'int' && $name !== 'string') {
-            throw new LogicException(sprintf('Unsupported enum backing type: %s.', $name));
+            throw new LogicException(sprintf('不支持的枚举值类型 %s：只支持 int 与 string。', $name));
         }
 
         return $cache[static::class] = $name;
