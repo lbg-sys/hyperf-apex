@@ -133,6 +133,17 @@
   模型只 `use SoftDeletes` 而不写常量会去碰一个不存在的列，要等运行期才炸。
 - `ApiResponseDTO::success()` 的 `data` 默认值从 `[]` 改为 `null`：无业务数据的接口在文档里是
   `data: null`，给 `[]` 会让「没有数据」与「数据是空列表」在响应里长得一模一样。
+- `ModelMetadataReader` 不再把模型未指定连接时的连接名硬编码成 `'default'`：应用的默认连接常叫
+  `mysql` / `main`，写死会让 `schema:model-check` 去解析一个不存在的连接（或报「连接 default
+  不是连接池连接」）。改为取连接解析器的默认连接，与框架解析时同一个来源。
+- `SchemaModelChecker` 识别 `?int` 这类可空简写：此前它被当成关系属性（如 `null|Message`）
+  而跳过「注解与列是否对得上」的检查，静默漏报。
+- `JsonResponseEncoder` 加 `JSON_INVALID_UTF8_SUBSTITUTE`：库里可能存着非 UTF-8 字节
+  （历史数据、从上游原样回放的响应体），严格模式下一条脏数据就把整条成功响应升级成 500。
+- `AbstractModel::getEventDispatcher()` 缓存解析结果：retrieved 事件在每次模型水合时都会问一次
+  （连只读的 `find()` 也算），而容器在运行期不变。不缓存 `null` —— worker 启动完成前那一刻的
+  结果会把此后所有 Model 事件按死。
+
 - 控制器发现规则重写：不再要求路径里含 `/Controller/`，也不再从文件内容里用正则抽类名 ——
   前者会让放在别的目录下的控制器静默从文档里消失，后者遇到 `app/Controller/` 下的
   trait / interface / enum 会抛「无法解析出类名」把整个命令拦下。现在扫描全部 `.php` 并用
@@ -144,6 +155,9 @@
 
 ### 新增
 
+- `AbstractRepository::paginate()`：同一份条件同时产出当前页数据与总数（先 clone 出 count、
+  再取当前页 slice），供分页响应使用。各仓储自己拼两遍条件时，漏掉一个 `where` 就会出现
+  「total 是 100、list 只有 3 条」这类对不上的分页。
 - 空闲连接回收（`websocket.idle_timeout`，默认 180 秒）：网络中断不会触发 `onClose`，连接行会一直占着
   定长索引表，写满后新连接被直接拒绝且不会自愈。现在收到任意消息即刷新活跃时间，超时连接由
   `WsIdleConnectionRecycleListener` 主动断开（协程服务器下 Swoole 的 `heartbeat_*` 配置不生效）。

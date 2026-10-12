@@ -52,6 +52,15 @@ abstract class AbstractModel extends Model
     private static array $bootingCoroutines = [];
 
     /**
+     * 已解析的事件调度器.
+     *
+     * 容器在运行期不变，而 retrieved 事件在每次模型水合时都会问一次（连只读的 find() 也算），
+     * 值得缓存。**不缓存 null**：worker 启动完成前还取不到调度器，把那一刻的 null 缓存下来
+     * 会让此后所有 Model 事件静默失效。
+     */
+    private static ?EventDispatcherInterface $eventDispatcher = null;
+
+    /**
      * 当前模型对应的逻辑表名（不含连接前缀，前缀由查询语法统一添加）.
      *
      * join、from、where、select 等由查询构造器处理的场景统一通过本方法引用表名；
@@ -101,6 +110,10 @@ abstract class AbstractModel extends Model
      */
     public function getEventDispatcher(): ?EventDispatcherInterface
     {
+        if (self::$eventDispatcher !== null) {
+            return self::$eventDispatcher;
+        }
+
         if (! ApplicationContext::hasContainer()) {
             return null;
         }
@@ -110,7 +123,7 @@ abstract class AbstractModel extends Model
             return null;
         }
 
-        return $container->get(EventDispatcherInterface::class);
+        return self::$eventDispatcher = $container->get(EventDispatcherInterface::class);
     }
 
     /**

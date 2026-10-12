@@ -6,6 +6,7 @@ namespace Hyperf\Apex\Database\Schema;
 
 use FilesystemIterator;
 use Hyperf\Apex\Database\Model\AbstractModel;
+use Hyperf\Database\Model\Register;
 use Hyperf\Database\Model\Relations\Relation;
 use Hyperf\Database\Model\SoftDeletes;
 use LogicException;
@@ -138,7 +139,10 @@ final class ModelMetadataReader
         $table = $instance->getTable();
         $connection = (string) $instance->getConnectionName();
         if ($connection === '') {
-            $connection = 'default';
+            // 不能硬编码 'default'：应用的默认连接常叫 mysql / main，写死会让校验去解析一个
+            // 不存在的连接（或报「连接 default 不是连接池连接」）。模型没显式指定连接时，
+            // 用的就是连接解析器的默认连接 —— 从这里取，与框架解析时同一个来源。
+            $connection = Register::getConnectionResolver()?->getDefaultConnection() ?? '';
         }
 
         $usesSoftDeletes = in_array(SoftDeletes::class, class_uses_recursive($reflection->getName()), true);

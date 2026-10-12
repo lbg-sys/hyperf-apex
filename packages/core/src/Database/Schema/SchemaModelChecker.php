@@ -216,6 +216,10 @@ final class SchemaModelChecker
         }
 
         foreach ($parts as $part) {
+            // `?int` 是「可空 int」的简写，先剥掉问号再比对基础类型：否则它会被当成关系属性
+            // （如 `null|Message` 那种）而跳过「注解与列是否对得上」的检查，静默漏报。
+            $part = ltrim($part, '?');
+
             if (str_contains($part, '<')) {
                 continue;
             }

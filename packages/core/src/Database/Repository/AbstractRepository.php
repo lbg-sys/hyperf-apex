@@ -40,6 +40,32 @@ abstract class AbstractRepository
     }
 
     /**
+     * 分页查询：同一份条件同时产出当前页数据与总数。
+     *
+     * 计数与取数必须来自同一个 Builder。各仓储自己拼两遍条件时，漏掉一个 where 就会出现
+     * 「total 是 100、list 只有 3 条」这类对不上的分页，而且很难在测试里发现。
+     * 这里先 clone 出一份取 count，再在原 Builder 上取当前页 —— 全局 Scope（软删除等）
+     * 对两者一致生效。
+     *
+     * @param Builder<TModel> $builder
+     * @return array{list: list<TModel>, total: int}
+     */
+    protected function paginate(Builder $builder, int $page, int $perPage): array
+    {
+        // 页码与每页条数为 0 或负数时按 1 处理：调用方多来自请求参数，不该让它们把 SQL 拼坏。
+        $page = max(1, $page);
+        $perPage = max(1, $perPage);
+
+        // clone 而不是复用同一个实例：Eloquent 的 Builder 有状态，count 之后再取数据会被聚合影响。
+        $total = (int) $builder->clone()->count();
+
+        /** @var list<TModel> $list */
+        $list = array_values($builder->forPage($page, $perPage)->get()->all());
+
+        return ['list' => $list, 'total' => $total];
+    }
+
+    /**
      * 按主键查询单条记录。
      *
      * 经由 query() 取得 Builder，因此始终受 Model 全局 Scope 约束。
@@ -136,6 +162,10 @@ abstract class AbstractRepository
      *
      * 返回受影响行数是必要的：`INSERT IGNORE` 会把数据类错误（非法值、超长截断、
      * NOT NULL 违规）也降级成警告并丢行，不只是唯一键冲突 —— 调用方据此才能发现「少插了行」。
+     *
+     * 分块之间不共享事务：超过 INSERT_CHUNK_SIZE 行时，第 2 块失败会留下已提交的第 1 块
+     * （部分成功）。需要「要么全写、要么全不写」的调用方请在自己的事务里调用本方法 ——
+     * 那时所有分块都在同一个事务内。
      *
      * @param list<array<string, mixed>> $rows
      */
