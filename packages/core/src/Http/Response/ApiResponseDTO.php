@@ -24,12 +24,19 @@ final readonly class ApiResponseDTO implements ApiResponseInterface, JsonSeriali
         public int $code,
         #[FieldDescription('提示信息')]
         public string $message,
+        // 默认 null 而不是空数组：无业务数据的接口（void 返回类型）在文档里是 `data: null`，
+        // 给 `[]` 会让「没有数据」与「数据是空列表」在响应里长得一模一样。
         #[FieldDescription('业务数据'), Required, ResponsePayload]
-        public mixed $data = [],
+        public mixed $data = null,
     ) {
     }
 
-    public static function success(mixed $data = [], string $message = '成功'): self
+    public function code(): int
+    {
+        return $this->code;
+    }
+
+    public static function success(mixed $data = null, string $message = '成功'): self
     {
         return new self(ErrorCode::SUCCESS->value, $message, $data);
     }

@@ -161,6 +161,11 @@ final readonly class NoPayloadResponseDTO implements ApiResponseInterface
     ) {
     }
 
+    public function code(): int
+    {
+        return $this->code;
+    }
+
     public static function success(mixed $data = [], string $message = '成功'): self
     {
         return new self(ErrorCode::SUCCESS->value, $message, $data);
@@ -198,6 +203,11 @@ final readonly class TwoPayloadResponseDTO implements ApiResponseInterface
         #[ResponsePayload]
         public mixed $extra = [],
     ) {
+    }
+
+    public function code(): int
+    {
+        return $this->code;
     }
 
     public static function success(mixed $data = [], string $message = '成功'): self

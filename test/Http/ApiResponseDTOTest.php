@@ -27,6 +27,19 @@ final class ApiResponseDTOTest extends TestCase
         $this->assertSame(['id' => 123, 'name' => 'test'], $decoded['data']);
     }
 
+    public function testSuccessWithoutDataKeepsNull(): void
+    {
+        // 无业务数据的接口（void 返回类型）在文档里是 `data: null`；
+        // 给 `[]` 会让「没有数据」与「数据是空列表」在响应里长得一模一样。
+        $dto = ApiResponseDTO::success();
+
+        $this->assertNull($dto->data);
+
+        $json = json_encode($dto);
+        $this->assertIsString($json);
+        $this->assertNull(json_decode($json, true)['data']);
+    }
+
     public function testMakeWithError(): void
     {
         $dto = ApiResponseDTO::make(ErrorCode::INVALID_ARGUMENT, '参数无效', ['field' => 'username']);

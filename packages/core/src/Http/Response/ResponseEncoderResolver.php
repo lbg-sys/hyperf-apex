@@ -39,9 +39,17 @@ final class ResponseEncoderResolver
                 return $methodAttribute->newInstance()->type;
             }
 
-            $classAttribute = $method->getDeclaringClass()->getAttributes(ResponseEncoder::class)[0] ?? null;
-            if ($classAttribute !== null) {
-                return $classAttribute->newInstance()->type;
+            /*
+             * 类级声明要沿继承链往上找：控制器常把动作放在抽象基类里，注解挂在具体子类上
+             * （方法继承自父类，`getDeclaringClass()` 拿到的是父类）；子类覆写父类方法时
+             * 又反过来丢父类的注解。只看声明类会让这两种写法静默失效 —— 声明了非 JSON 编码的
+             * 接口返回 JSON，而文档按 `contentType()` 生成媒体类型，两边分叉。
+             */
+            for ($class = $method->getDeclaringClass(); $class !== false; $class = $class->getParentClass()) {
+                $classAttribute = $class->getAttributes(ResponseEncoder::class)[0] ?? null;
+                if ($classAttribute !== null) {
+                    return $classAttribute->newInstance()->type;
+                }
             }
         }
 

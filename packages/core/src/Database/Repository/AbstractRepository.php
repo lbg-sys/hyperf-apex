@@ -127,26 +127,33 @@ abstract class AbstractRepository
     }
 
     /**
-     * 批量插入并忽略唯一键冲突。
+     * 批量插入并忽略唯一键冲突，返回累计受影响行数。
      *
-     * 分块避免单条语句过长。`create_time` 由列默认值填充，这里只补 `update_time`：
-     * 走原始 INSERT 不经过模型的时间戳逻辑，而报表与排序会读它，得取应用服务器本地时间
-     * （`Time::now()`）与模型写入路径保持同一口径。调用方显式给出的值优先。
+     * 分块避免单条语句过长。两个时间列都由应用侧补：走原始 INSERT 不经过模型的时间戳逻辑，
+     * 而报表与排序会读它们 —— 交给列的 `CURRENT_TIMESTAMP` 默认值会让同一张表里出现两个时钟
+     * （`create_time` 来自数据库、`update_time` 来自应用服务器），AGENTS 也明确要求时间值一律
+     * 由应用侧传入。调用方显式给出的值优先（PHP 的数组并集是左操作数优先）。
+     *
+     * 返回受影响行数是必要的：`INSERT IGNORE` 会把数据类错误（非法值、超长截断、
+     * NOT NULL 违规）也降级成警告并丢行，不只是唯一键冲突 —— 调用方据此才能发现「少插了行」。
      *
      * @param list<array<string, mixed>> $rows
      */
-    protected function insertRowsOrIgnore(array $rows): void
+    protected function insertRowsOrIgnore(array $rows): int
     {
         if ($rows === []) {
-            return;
+            return 0;
         }
 
         $now = Time::now()->toDateTimeString();
+        $inserted = 0;
         foreach (array_chunk($rows, self::INSERT_CHUNK_SIZE) as $chunk) {
-            $this->query()->insertOrIgnore(array_map(
-                static fn (array $row): array => ['update_time' => $now] + $row,
+            $inserted += (int) $this->query()->insertOrIgnore(array_map(
+                static fn (array $row): array => $row + ['create_time' => $now, 'update_time' => $now],
                 $chunk,
             ));
         }
+
+        return $inserted;
     }
 }

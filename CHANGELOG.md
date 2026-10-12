@@ -115,6 +115,24 @@
   组件名会带 `<`、`>` 等字符，而它要写进 `#/components/schemas/…` 引用里，
   多数 OpenAPI 工具与代码生成器解析不了。
 - `EnumValue` 与 `ReturnTypeResolver` 的四处英文报错信息改为中文，并带上方法 / 属性定位。
+- **信封里的业务状态码现在会反映到 HTTP 状态码上**（`ApiResponseTransformer`）：控制器直接返回
+  信封时（`ApiResponseDTO::make(ErrorCode::RESOURCE_NOT_FOUND)`）此前一律是 200 —— 响应体说
+  「资源不存在」、HTTP 说「成功」，而文档（按 `ErrorCode::getHttpStatus()` 生成）、监控的错误率
+  与客户端的重试策略全都按 HTTP 状态工作。认不出的自定义错误码不猜状态，保持原样。
+- `AbstractRepository::insertRowsOrIgnore()` 三处修正：数组并集写反，导致调用方显式给出的
+  `update_time` 被静默覆盖（注释承诺的是相反的优先级）；`create_time` 此前依赖列的
+  `CURRENT_TIMESTAMP` 默认值，会让同一张表出现两个时钟（`create_time` 来自数据库、
+  `update_time` 来自应用服务器），与「时间值一律由应用侧传入」的约定冲突；返回值改为
+  **累计受影响行数** —— `INSERT IGNORE` 会把数据类错误（非法值、超长截断、NOT NULL 违规）
+  也降级成警告并丢行，不只是唯一键冲突，调用方据此才能发现「少插了行」。
+- `ResponseEncoderResolver` 的类级 `#[ResponseEncoder]` 改为沿继承链查找：此前只看方法的
+  声明类，控制器把动作放在抽象基类里（注解在子类上）或子类覆写父类方法（注解在父类上）时，
+  声明会静默失效 —— 接口返回 JSON，而文档按 `contentType()` 生成另一种媒体类型。
+- `AbstractModel` 补上 `public const DELETED_AT = 'delete_time'`：Hyperf 的 `SoftDeletes` 默认用
+  `deleted_at`，而本仓库约定（以及 `schema:model-check` 的校验规则）是 `delete_time`，
+  模型只 `use SoftDeletes` 而不写常量会去碰一个不存在的列，要等运行期才炸。
+- `ApiResponseDTO::success()` 的 `data` 默认值从 `[]` 改为 `null`：无业务数据的接口在文档里是
+  `data: null`，给 `[]` 会让「没有数据」与「数据是空列表」在响应里长得一模一样。
 - 控制器发现规则重写：不再要求路径里含 `/Controller/`，也不再从文件内容里用正则抽类名 ——
   前者会让放在别的目录下的控制器静默从文档里消失，后者遇到 `app/Controller/` 下的
   trait / interface / enum 会抛「无法解析出类名」把整个命令拦下。现在扫描全部 `.php` 并用

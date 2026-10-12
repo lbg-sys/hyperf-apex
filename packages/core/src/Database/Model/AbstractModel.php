@@ -32,6 +32,15 @@ abstract class AbstractModel extends Model
     public const UPDATED_AT = 'update_time';
 
     /**
+     * 软删除列固定叫 `delete_time`。
+     *
+     * Hyperf 的 SoftDeletes 默认用 `deleted_at`，而本仓库（以及 `schema:model-check` 的校验规则）
+     * 约定的是 `delete_time` —— 模型只 `use SoftDeletes` 而不写这个常量时，查询会去碰一个不存在的列，
+     * 要等运行期才炸。约定放在基类一处承担，不让每个模型各写一遍。
+     */
+    public const DELETED_AT = 'delete_time';
+
+    /**
      * 正在执行 boot 的协程 id，按模型类分组.
      *
      * 「标记晚置位」（并发正确性：任何协程都不该看到「已 boot 却没有作用域」）与「标记先置位」
