@@ -26,7 +26,10 @@ use Psr\Log\NullLogger;
  */
 final class StubLoggerFactory
 {
-    public static function create(string $channel = 'error'): LoggerFactory
+    /**
+     * @param array<string, array<string, mixed>> $channels 通道定义；留空表示只建 default 指向的那一个通道
+     */
+    public static function create(string $channel = 'error', array $channels = []): LoggerFactory
     {
         $container = new class implements ContainerInterface {
             public function get(string $id): mixed
@@ -66,7 +69,7 @@ final class StubLoggerFactory
         return new LoggerFactory($container, new Config([
             'logger' => [
                 'default' => $channel,
-                'channels' => [$channel => []],
+                'channels' => $channels === [] ? [$channel => []] : $channels,
             ],
         ]));
     }

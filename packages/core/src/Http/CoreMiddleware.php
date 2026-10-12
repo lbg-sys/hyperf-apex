@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hyperf\Apex\Http;
 
+use Hyperf\Apex\DTO\AbstractDTO;
 use Hyperf\Apex\Http\ArgumentResolver\HandlerMethodArgumentResolverInterface;
 use Hyperf\Apex\Http\ArgumentResolver\HandlerMethodArgumentResolverRegistry;
 use Hyperf\Apex\Http\Response\ResponseTransformerRegistry;
@@ -14,6 +15,7 @@ use Hyperf\Contract\Jsonable;
 use Hyperf\Di\ReflectionManager;
 use Hyperf\HttpServer\CoreMiddleware as HyperfCoreMiddleware;
 use InvalidArgumentException;
+use LogicException;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -67,6 +69,24 @@ class CoreMiddleware extends HyperfCoreMiddleware
             }
             if ($resolved) {
                 continue;
+            }
+
+            /*
+             * 请求 DTO 没有显式声明来源时必须立刻报错，不能落到下面的容器注入。
+             *
+             * Hyperf 的容器对任何可实例化的类都能建出定义（DefinitionSource::getDefinition()
+             * 会对未知类自动 autowire），于是 `container->get(StoreRequestDTO::class)` 会**成功**
+             * 地构造一个空 DTO —— 请求体被静默忽略，控制器拿到一份空数据；若 DTO 有必填构造参数，
+             * 则变成一条看不懂的容器异常。两种情况都不提示「缺了 #[FromBody]」。
+             */
+            $typeName = $definition->getName();
+            if (is_a($typeName, AbstractDTO::class, true)) {
+                throw new LogicException(sprintf(
+                    '%s::%s 的参数 $%s 是请求 DTO，必须用 #[FromQuery] / #[FromBody] / #[FromMultipart] 指明取值来源。',
+                    $controller,
+                    $action,
+                    $definition->getMeta('name'),
+                ));
             }
 
             $value = $arguments[$position] ?? $arguments[$definition->getMeta('name')] ?? null;

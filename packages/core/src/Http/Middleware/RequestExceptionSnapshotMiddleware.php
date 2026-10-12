@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hyperf\Apex\Http\Middleware;
 
 use Hyperf\Apex\Exception\ExpectedException;
+use Hyperf\Apex\Logging\LoggerChannels;
 use Hyperf\Apex\Support\SensitiveDataFilter;
 use Hyperf\Contract\ConfigInterface;
 use Hyperf\Logger\LoggerFactory;
@@ -22,7 +23,7 @@ final class RequestExceptionSnapshotMiddleware extends AbstractMiddleware
         LoggerFactory $loggerFactory,
         private readonly ConfigInterface $config,
     ) {
-        $this->logger = $loggerFactory->get('exception', 'error');
+        $this->logger = LoggerChannels::resolve($loggerFactory, 'exception', 'error');
     }
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface

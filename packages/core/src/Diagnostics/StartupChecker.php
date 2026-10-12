@@ -85,8 +85,7 @@ final class StartupChecker implements CheckerInterface
                 continue;
             }
             $path = (string) $rule['path'];
-            $value = $this->config->get($path, '');
-            if (is_array($value) || trim((string) $value) !== '') {
+            if ($this->isConfigured($this->config->get($path, null))) {
                 continue;
             }
             $errors[] = sprintf(
@@ -97,6 +96,22 @@ final class StartupChecker implements CheckerInterface
         }
 
         return $errors;
+    }
+
+    /**
+     * 值是否算「已配置」。
+     *
+     * 只有 null 与空字符串算未配置：`false`、`0`、空数组都是合法取值，不能因为 `(string)`
+     * 转换后是空串（`(string) false === ''`）就把它们判成没配 —— 那会让服务拒绝启动，
+     * 且报的是「某某项未配置」，与真实原因（配了 false）完全对不上。
+     */
+    private function isConfigured(mixed $value): bool
+    {
+        if ($value === null) {
+            return false;
+        }
+
+        return ! is_string($value) || trim($value) !== '';
     }
 
     /**

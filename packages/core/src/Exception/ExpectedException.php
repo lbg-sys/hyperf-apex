@@ -33,6 +33,11 @@ final class ExpectedException
         return $throwable instanceof BusinessException
             || $throwable instanceof ValidationException
             || $throwable instanceof ModelNotFoundException
-            || $throwable instanceof HttpException;
+            /*
+             * HttpException 只认 4xx。5xx 的（ServerErrorHttpException、new HttpException(500, …)）
+             * 是服务端故障：如果也算「预期内」，它会既不写 error 日志也不上报告警，
+             * 真实故障就只剩 access 日志这一条线索 —— 而 error 日志与大屏才是排障入口。
+             */
+            || ($throwable instanceof HttpException && $throwable->getStatusCode() < 500);
     }
 }

@@ -26,14 +26,24 @@ final class FromQueryArgumentResolver implements HandlerMethodArgumentResolverIn
     public function resolveArgument(ReflectionParameter $parameter, ServerRequestInterface $request, array $arguments): mixed
     {
         $attribute = $parameter->getAttributes(FromQuery::class)[0]->newInstance();
-        $name = $attribute->name ?? $parameter->getName();
         $query = $request->getQueryParams();
         $type = $parameter->getType();
 
         if ($type instanceof ReflectionNamedType && ! $type->isBuiltin()) {
-            return $this->hydrator->hydrate($type->getName(), $query);
+            /*
+             * name 对 DTO 同样生效：`#[FromQuery('filter')] FilterDTO $dto` 从 query 的 filter 子键水合，
+             * 不写 name 时整个 query 就是 DTO 的来源。此前 DTO 分支把 name 静默忽略 ——
+             * 声明写着取子键、实际拿的是整个 query，没有任何提示。
+             */
+            $named = $attribute->name === null ? null : ($query[$attribute->name] ?? null);
+
+            return $this->hydrator->hydrate(
+                $type->getName(),
+                $attribute->name === null ? $query : (is_array($named) ? $named : []),
+            );
         }
 
+        $name = $attribute->name ?? $parameter->getName();
         if (! array_key_exists($name, $query)) {
             if ($parameter->isDefaultValueAvailable()) {
                 return $parameter->getDefaultValue();
@@ -44,11 +54,23 @@ final class FromQueryArgumentResolver implements HandlerMethodArgumentResolverIn
             throw new BusinessException(ErrorCode::INVALID_ARGUMENT, sprintf('Query 参数 %s 必填。', $name));
         }
 
-        return $this->cast($query[$name], $type instanceof ReflectionNamedType ? $type->getName() : 'mixed', $name);
+        return $this->cast(
+            $query[$name],
+            $type instanceof ReflectionNamedType ? $type->getName() : 'mixed',
+            $name,
+            $parameter->allowsNull(),
+        );
     }
 
-    private function cast(mixed $value, string $type, string $name): mixed
+    private function cast(mixed $value, string $type, string $name, bool $allowsNull): mixed
     {
+        // 可空参数拿到空值算 null：`?page=` 是查询串的常见形状（键存在、值为空串）。
+        // 口径与 DTO 路径一致（见 RequestDataHydrator::castBuiltin 对可空类型的处理），
+        // 否则同一个「空值」在两种参数形态下一个是 null、一个是 400。
+        if ($allowsNull && is_string($value) && trim($value) === '') {
+            return null;
+        }
+
         $result = match ($type) {
             'int' => filter_var($value, FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE),
             'float' => filter_var($value, FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE),
@@ -60,6 +82,7 @@ final class FromQueryArgumentResolver implements HandlerMethodArgumentResolverIn
         if ($result === null && $type !== 'mixed') {
             throw new BusinessException(ErrorCode::INVALID_ARGUMENT, sprintf('Query 参数 %s 类型不正确，应为 %s。', $name, $type));
         }
+
         return $result;
     }
 }

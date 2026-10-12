@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hyperf\Apex\Listener;
 
+use Hyperf\Apex\Logging\LoggerChannels;
 use Hyperf\Apex\Support\SqlBindingRedactor;
 use Hyperf\Collection\Arr;
 use Hyperf\Contract\ConfigInterface;
@@ -27,7 +28,7 @@ class DbQueryExecutedListener implements ListenerInterface
 
     public function __construct(ContainerInterface $container, ConfigInterface $config)
     {
-        $this->logger = $container->get(LoggerFactory::class)->get('sql', 'sql');
+        $this->logger = LoggerChannels::resolve($container->get(LoggerFactory::class), 'sql', 'sql');
         $this->full = (bool) $config->get('sql_log.full', true);
         $this->slowMs = (float) $config->get('sql_log.slow_ms', 200);
         $this->writes = (bool) $config->get('sql_log.writes', true);

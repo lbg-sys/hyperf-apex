@@ -7,6 +7,7 @@ namespace Hyperf\Apex\Security\Attribute;
 use Attribute;
 use BackedEnum;
 use Hyperf\Apex\Contract\PermissionInterface;
+use InvalidArgumentException;
 
 /**
  * 声明接口需要的操作权限。
@@ -31,11 +32,19 @@ final class RequirePermission
         $all = is_array($permission) ? $permission : [$permission];
         $extracted = [];
         foreach ($all as $item) {
-            $extracted[] = match (true) {
+            $identifier = match (true) {
                 $item instanceof PermissionInterface => $item->identifier(),
                 $item instanceof BackedEnum => (string) $item->value,
                 default => (string) $item,
             };
+
+            // 空权限码会让 isDeclared() / requiresPermission() 为真，却没有任何主体能持有它 ——
+            // 结果是该接口对所有请求恒拒绝，而日志与响应里都看不出原因。声明错误在这里就报出来。
+            if (trim($identifier) === '') {
+                throw new InvalidArgumentException('权限码不能为空：请给出字符串、BackedEnum 或 PermissionInterface。');
+            }
+
+            $extracted[] = $identifier;
         }
         $this->permissions = array_values(array_unique($extracted));
     }

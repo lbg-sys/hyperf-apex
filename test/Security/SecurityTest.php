@@ -16,6 +16,7 @@ use Hyperf\Apex\Security\Contract\PermissionCodeInterface;
 use Hyperf\Apex\Security\Contract\PermissionGroupInterface;
 use Hyperf\Apex\Security\PermissionSet;
 use Hyperf\Constants\Annotation\Constants;
+use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use ReflectionMethod;
 
@@ -114,6 +115,23 @@ final class SecurityTest extends TestCase
 
         $this->assertTrue($set->hasAny(['missing', 'user:profile:read']));
         $this->assertFalse($set->hasAny(['missing1', 'missing2']));
+    }
+
+    public function testEmptyPermissionCodeIsRejectedAtConstruction(): void
+    {
+        // 空权限码会让 isDeclared() / requiresPermission() 为真，却没有任何主体能持有它 ——
+        // 表现是「这个接口对所有请求恒拒绝」，而日志与响应里都看不出原因。
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('权限码不能为空');
+
+        new RequirePermission('');
+    }
+
+    public function testBlankPermissionInsideArrayIsRejected(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        new RequirePermission(['record:read', '   ']);
     }
 
     public function testPermissionCodeTraitAndGroup(): void

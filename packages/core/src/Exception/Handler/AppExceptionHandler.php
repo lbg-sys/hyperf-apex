@@ -14,6 +14,7 @@ use Hyperf\Apex\Http\HandlerMethodResolver;
 use Hyperf\Apex\Http\Response\ApiResponseFactory;
 use Hyperf\Apex\Http\Response\Encoder\JsonResponseEncoder;
 use Hyperf\Apex\Http\Response\ResponseEncoderResolver;
+use Hyperf\Apex\Logging\LoggerChannels;
 use Hyperf\Context\RequestContext;
 use Hyperf\Database\Model\ModelNotFoundException;
 use Hyperf\ExceptionHandler\ExceptionHandler;
@@ -44,7 +45,7 @@ class AppExceptionHandler extends ExceptionHandler
          */
         private readonly ?UnhandledExceptionReporterInterface $unhandledReporter = null,
     ) {
-        $this->logger = $loggerFactory->get('exception', 'error');
+        $this->logger = LoggerChannels::resolve($loggerFactory, 'exception', 'error');
     }
 
     public function handle(Throwable $throwable, ResponsePlusInterface $response): ResponsePlusInterface
