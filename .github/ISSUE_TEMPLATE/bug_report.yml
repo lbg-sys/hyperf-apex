@@ -18,7 +18,7 @@ body:
     id: version
     attributes:
       label: 版本
-      placeholder: v2.0.0（或 dev-master 的具体 commit）
+      placeholder: v3.0.0（或 dev-master 的具体 commit）
     validations:
       required: true
   - type: textarea

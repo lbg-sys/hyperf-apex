@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "4bf7b7f65d7c61125fcebe87f1e4af8b",
+    "content-hash": "8e004232e7be10292eb0a786a330de54",
     "packages": [
         {
             "name": "carbonphp/carbon-doctrine-types",
@@ -888,10 +888,10 @@
             "dist": {
                 "type": "path",
                 "url": "packages/apidoc",
-                "reference": "8ba7e132ef2f713f874243407c350419c65b4802"
+                "reference": "6dddecc78784fb437a38369325823b76a10f06d9"
             },
             "require": {
-                "hyperf-apex/core": "^2.0",
+                "hyperf-apex/core": "^3.0",
                 "php": ">=8.4",
                 "symfony/yaml": "^7.4",
                 "zircote/swagger-php": "^6.12"
@@ -899,8 +899,8 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "2.0.x-dev",
-                    "dev-main": "2.0.x-dev"
+                    "dev-master": "3.0.x-dev",
+                    "dev-main": "3.0.x-dev"
                 },
                 "hyperf": {
                     "config": "Hyperf\\Apex\\ApiDoc\\ConfigProvider"
@@ -942,19 +942,19 @@
             "dist": {
                 "type": "path",
                 "url": "packages/apidoc-apifox",
-                "reference": "1c73020e09d16cf67822bb8ceadf14640e1dd249"
+                "reference": "21bdac07e389a24a44954e99c33dd1e0f8541094"
             },
             "require": {
-                "hyperf-apex/apidoc": "^2.0",
-                "hyperf-apex/core": "^2.0",
-                "hyperf-apex/websocket": "^2.0",
+                "hyperf-apex/apidoc": "^3.0",
+                "hyperf-apex/core": "^3.0",
+                "hyperf-apex/websocket": "^3.0",
                 "php": ">=8.4"
             },
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "2.0.x-dev",
-                    "dev-main": "2.0.x-dev"
+                    "dev-master": "3.0.x-dev",
+                    "dev-main": "3.0.x-dev"
                 },
                 "hyperf": {
                     "config": "Hyperf\\Apex\\ApiDoc\\Apifox\\ConfigProvider"
@@ -998,7 +998,7 @@
             "dist": {
                 "type": "path",
                 "url": "packages/core",
-                "reference": "c9e42577872a73791cd88de493edffde958920ee"
+                "reference": "5dc9a830f2781afcee9057cc438e1bd197f24d6f"
             },
             "require": {
                 "hyperf/command": "~3.2.0",
@@ -1030,8 +1030,8 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "2.0.x-dev",
-                    "dev-main": "2.0.x-dev"
+                    "dev-master": "3.0.x-dev",
+                    "dev-main": "3.0.x-dev"
                 },
                 "hyperf": {
                     "config": "Hyperf\\Apex\\ConfigProvider"
@@ -1074,18 +1074,21 @@
             "dist": {
                 "type": "path",
                 "url": "packages/metrics",
-                "reference": "87a18f5afba2e22d77a6e487db4fc81b73d8a6a1"
+                "reference": "d0321499aca44e05aa4f2caea5f9d786396af439"
             },
             "require": {
-                "hyperf-apex/core": "^2.0",
+                "hyperf-apex/core": "^3.0",
                 "hyperf/memory": "~3.2.0",
                 "php": ">=8.4"
+            },
+            "suggest": {
+                "hyperf-apex/websocket": "采集 WebSocket 连接数 / 空闲连接数 / 索引容量指标时需要；未安装时 WebSocketGaugeCollector 会被自动跳过"
             },
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "2.0.x-dev",
-                    "dev-main": "2.0.x-dev"
+                    "dev-master": "3.0.x-dev",
+                    "dev-main": "3.0.x-dev"
                 },
                 "hyperf": {
                     "config": "Hyperf\\Apex\\Metrics\\ConfigProvider"
@@ -1128,21 +1131,23 @@
             "dist": {
                 "type": "path",
                 "url": "packages/reliability",
-                "reference": "48c7f37ca2dcb4978d4ac718e4b63d7feefb16d1"
+                "reference": "685bb20978653293d85bc22e02b1fb57e2e77f70"
             },
             "require": {
-                "hyperf-apex/core": "^2.0",
-                "hyperf/cache": "~3.2.0",
+                "hyperf-apex/core": "^3.0",
                 "hyperf/database": "~3.2.0",
                 "hyperf/guzzle": "~3.2.0",
                 "hyperf/redis": "~3.2.0",
                 "php": ">=8.4"
             },
+            "suggest": {
+                "hyperf-apex/metrics": "出站调用会自动上报 core_outbound_requests_total 与 core_outbound_request_duration_seconds；未安装时静默跳过（见 OutboundRecorder）"
+            },
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "2.0.x-dev",
-                    "dev-main": "2.0.x-dev"
+                    "dev-master": "3.0.x-dev",
+                    "dev-main": "3.0.x-dev"
                 },
                 "hyperf": {
                     "config": "Hyperf\\Apex\\Reliability\\ConfigProvider"
@@ -1190,18 +1195,18 @@
             "dist": {
                 "type": "path",
                 "url": "packages/websocket",
-                "reference": "635229bc8127bc3bdd0980a9a9250dd157fff9a3"
+                "reference": "e1fcab95051d8e6eb35b98c15ac7968c0d2fe55d"
             },
             "require": {
-                "hyperf-apex/core": "^2.0",
+                "hyperf-apex/core": "^3.0",
                 "hyperf/websocket-server": "^3.2",
                 "php": ">=8.4"
             },
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "2.0.x-dev",
-                    "dev-main": "2.0.x-dev"
+                    "dev-master": "3.0.x-dev",
+                    "dev-main": "3.0.x-dev"
                 },
                 "hyperf": {
                     "config": "Hyperf\\Apex\\WebSocket\\ConfigProvider"
@@ -1237,79 +1242,6 @@
             "transport-options": {
                 "relative": true
             }
-        },
-        {
-            "name": "hyperf/cache",
-            "version": "v3.2.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/hyperf/cache.git",
-                "reference": "08cda1e9658685f4e0fdbe5aadb1c09fc9b63abc"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/hyperf/cache/zipball/08cda1e9658685f4e0fdbe5aadb1c09fc9b63abc",
-                "reference": "08cda1e9658685f4e0fdbe5aadb1c09fc9b63abc",
-                "shasum": ""
-            },
-            "require": {
-                "hyperf/codec": "~3.2.0",
-                "hyperf/collection": "~3.2.0",
-                "hyperf/contract": "~3.2.0",
-                "hyperf/coordinator": "~3.2.0",
-                "hyperf/coroutine": "~3.2.0",
-                "hyperf/stringable": "~3.2.0",
-                "hyperf/support": "~3.2.0",
-                "php": ">=8.2",
-                "psr/container": "^1.0 || ^2.0",
-                "psr/simple-cache": "^1.0 || ^2.0 || ^3.0"
-            },
-            "suggest": {
-                "hyperf/di": "Use cache annotations.",
-                "hyperf/event": "Use listener to delete annotation cache."
-            },
-            "type": "library",
-            "extra": {
-                "hyperf": {
-                    "config": "Hyperf\\Cache\\ConfigProvider"
-                },
-                "branch-alias": {
-                    "dev-master": "3.2-dev"
-                }
-            },
-            "autoload": {
-                "psr-4": {
-                    "Hyperf\\Cache\\": "src/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "description": "A cache component for hyperf.",
-            "homepage": "https://hyperf.io",
-            "keywords": [
-                "cache",
-                "hyperf",
-                "php"
-            ],
-            "support": {
-                "docs": "https://hyperf.wiki",
-                "issues": "https://github.com/hyperf/hyperf/issues",
-                "pull-request": "https://github.com/hyperf/hyperf/pulls",
-                "source": "https://github.com/hyperf/hyperf"
-            },
-            "funding": [
-                {
-                    "url": "https://hyperf.wiki/#/zh-cn/donate",
-                    "type": "custom"
-                },
-                {
-                    "url": "https://opencollective.com/hyperf",
-                    "type": "open_collective"
-                }
-            ],
-            "time": "2026-06-07T09:04:32+00:00"
         },
         {
             "name": "hyperf/code-parser",
@@ -4684,7 +4616,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "2.0.x-dev"
+                    "dev-master": "3.0.x-dev"
                 }
             },
             "autoload": {
@@ -4894,7 +4826,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "2.0.x-dev"
+                    "dev-master": "3.0.x-dev"
                 }
             },
             "autoload": {
@@ -5089,57 +5021,6 @@
                 "source": "https://github.com/php-fig/log/tree/3.0.2"
             },
             "time": "2024-09-11T13:17:53+00:00"
-        },
-        {
-            "name": "psr/simple-cache",
-            "version": "3.0.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/php-fig/simple-cache.git",
-                "reference": "764e0b3939f5ca87cb904f570ef9be2d78a07865"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/php-fig/simple-cache/zipball/764e0b3939f5ca87cb904f570ef9be2d78a07865",
-                "reference": "764e0b3939f5ca87cb904f570ef9be2d78a07865",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=8.0.0"
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "3.0.x-dev"
-                }
-            },
-            "autoload": {
-                "psr-4": {
-                    "Psr\\SimpleCache\\": "src/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "PHP-FIG",
-                    "homepage": "https://www.php-fig.org/"
-                }
-            ],
-            "description": "Common interfaces for simple caching",
-            "keywords": [
-                "cache",
-                "caching",
-                "psr",
-                "psr-16",
-                "simple-cache"
-            ],
-            "support": {
-                "source": "https://github.com/php-fig/simple-cache/tree/3.0.0"
-            },
-            "time": "2021-10-29T13:26:27+00:00"
         },
         {
             "name": "radebatz/type-info-extras",
@@ -7906,7 +7787,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "2.0.x-dev"
+                    "dev-master": "3.0.x-dev"
                 }
             },
             "autoload": {

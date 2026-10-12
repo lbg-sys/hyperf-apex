@@ -173,6 +173,13 @@
   ② 展开的绑定值不做转义：`O'Brien` 输出成 `'O'Brien'`（日志失真），含换行的值能在日志里
   伪造出完整的假行（log injection）；现在按 SQL 字面量规则转义，且 `null` / 布尔 / 数字不再
   套引号（`id = '5'` 会让人误以为那是字符串列）。
+- **包间约束与 `branch-alias` 停在 2.x（发布事故级）**：`v3.0.0` 已打 tag，但根元包与 5 个组件包的
+  `hyperf-apex/*` 约束仍是 `^2.0`（即 `>=2.0.0 <3.0.0`）、`branch-alias` 仍是 `2.0.x-dev` ——
+  装 `hyperf-apex/apidoc:^3.0` 会去解析 `core:^2.0`，**把 3.x 的包与 2.x 的 core 混装**，
+  而 3.x 的代码依赖 3.x 的 core API（新类、新方法），结果是装不上或运行期报错。
+  现已统一提升到 `^3.0` / `3.0.x-dev`，并同步 `composer.lock`、`split.yml` 与 Issue 模板里的
+  版本示例（`v2.0.0` → `v3.0.0`）。已发布的 3.0.0 无法撤回：使用它的工程需显式要求
+  `hyperf-apex/*:^3.0`，或等下一个补丁版本。
 - `SensitiveDataFilter` 的敏感键名补上 `api_key` / `apikey` / `private_key` / `signature`：
   这些字段名不会命中原有的 `password` / `token` / `secret` 等词，但落进审计或异常快照就是泄漏。
   裸 `key` 刻意不加 —— 它作为普通字段名太常见（`cache_key`、`sort_key`），加进来会遮掉大量正常字段。
