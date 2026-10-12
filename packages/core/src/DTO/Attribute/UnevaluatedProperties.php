@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hyperf\Apex\DTO\Attribute;
 
 use Attribute;
+use Hyperf\Apex\DTO\Contract\DocumentationOnlyAttribute;
 use Hyperf\Apex\DTO\Contract\SchemaAttribute;
 use Hyperf\Apex\DTO\Schema\SchemaFragment;
 use Hyperf\Apex\DTO\Schema\SchemaReference;
@@ -17,7 +18,7 @@ use Hyperf\Apex\DTO\Schema\SchemaReference;
  * 例：#[UnevaluatedProperties(false)] 禁止出现任何未声明的属性。
  */
 #[Attribute(Attribute::TARGET_PROPERTY)]
-final class UnevaluatedProperties implements SchemaAttribute
+final class UnevaluatedProperties implements SchemaAttribute, DocumentationOnlyAttribute
 {
     public function __construct(public readonly bool|string $value = false)
     {

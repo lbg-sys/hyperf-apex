@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hyperf\Apex\DTO\Attribute;
 
 use Attribute;
+use Hyperf\Apex\DTO\Contract\DocumentationOnlyAttribute;
 use Hyperf\Apex\DTO\Contract\SchemaAttribute;
 use Hyperf\Apex\DTO\Schema\SchemaFragment;
 
@@ -13,7 +14,7 @@ use Hyperf\Apex\DTO\Schema\SchemaFragment;
  * 类名不用 ReadOnly，因为 readonly 是 PHP 保留字。
  */
 #[Attribute(Attribute::TARGET_PROPERTY)]
-final class ReadOnlyValue implements SchemaAttribute
+final class ReadOnlyValue implements SchemaAttribute, DocumentationOnlyAttribute
 {
     public function __construct(public readonly bool $value = true)
     {

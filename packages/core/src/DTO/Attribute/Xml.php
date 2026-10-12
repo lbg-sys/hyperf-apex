@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hyperf\Apex\DTO\Attribute;
 
 use Attribute;
+use Hyperf\Apex\DTO\Contract\DocumentationOnlyAttribute;
 use Hyperf\Apex\DTO\Contract\SchemaAttribute;
 use Hyperf\Apex\DTO\Schema\SchemaFragment;
 
@@ -13,7 +14,7 @@ use Hyperf\Apex\DTO\Schema\SchemaFragment;
  * XML 表述的对接场景使用，正常业务字段不需要标注。
  */
 #[Attribute(Attribute::TARGET_PROPERTY)]
-final class Xml implements SchemaAttribute
+final class Xml implements SchemaAttribute, DocumentationOnlyAttribute
 {
     public function __construct(
         public readonly ?string $name = null,

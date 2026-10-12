@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hyperf\Apex\DTO\Attribute;
 
 use Attribute;
+use Hyperf\Apex\DTO\Contract\DocumentationOnlyAttribute;
 use Hyperf\Apex\DTO\Contract\SchemaAttribute;
 use Hyperf\Apex\DTO\Schema\SchemaFragment;
 
@@ -14,7 +15,7 @@ use Hyperf\Apex\DTO\Schema\SchemaFragment;
  * 例：#[PropertyNames(pattern: '^[a-z][a-z0-9_]*$')] 要求所有键名是小写蛇形。
  */
 #[Attribute(Attribute::TARGET_PROPERTY)]
-final class PropertyNames implements SchemaAttribute
+final class PropertyNames implements SchemaAttribute, DocumentationOnlyAttribute
 {
     public function __construct(
         public readonly ?string $pattern = null,

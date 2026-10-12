@@ -5,11 +5,12 @@ declare(strict_types=1);
 namespace Hyperf\Apex\DTO\Attribute;
 
 use Attribute;
+use Hyperf\Apex\DTO\Contract\DocumentationOnlyAttribute;
 use Hyperf\Apex\DTO\Contract\SchemaAttribute;
 use Hyperf\Apex\DTO\Schema\SchemaFragment;
 
 #[Attribute(Attribute::TARGET_PROPERTY)]
-final class FieldDescription implements SchemaAttribute
+final class FieldDescription implements SchemaAttribute, DocumentationOnlyAttribute
 {
     public function __construct(public readonly string $value)
     {

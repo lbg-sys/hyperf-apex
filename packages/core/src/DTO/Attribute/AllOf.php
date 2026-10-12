@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hyperf\Apex\DTO\Attribute;
 
 use Attribute;
+use Hyperf\Apex\DTO\Contract\DocumentationOnlyAttribute;
 use Hyperf\Apex\DTO\Contract\SchemaAttribute;
 use Hyperf\Apex\DTO\Schema\SchemaFragment;
 use Hyperf\Apex\DTO\Schema\SchemaReference;
@@ -16,7 +17,7 @@ use Hyperf\Apex\DTO\Schema\SchemaReference;
  * 例：#[AllOf(BaseProfileDTO::class, ExtraProfileDTO::class)]
  */
 #[Attribute(Attribute::TARGET_PROPERTY)]
-final class AllOf implements SchemaAttribute
+final class AllOf implements SchemaAttribute, DocumentationOnlyAttribute
 {
     /** @var list<string> */
     public readonly array $types;

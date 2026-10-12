@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hyperf\Apex\DTO\Attribute;
 
 use Attribute;
+use Hyperf\Apex\DTO\Contract\DocumentationOnlyAttribute;
 use Hyperf\Apex\DTO\Contract\SchemaAttribute;
 use Hyperf\Apex\DTO\Schema\SchemaFragment;
 
@@ -13,7 +14,7 @@ use Hyperf\Apex\DTO\Schema\SchemaFragment;
  * 适合需要展示多种典型写法的字段。
  */
 #[Attribute(Attribute::TARGET_PROPERTY)]
-final class Examples implements SchemaAttribute
+final class Examples implements SchemaAttribute, DocumentationOnlyAttribute
 {
     /** @var array<array-key, mixed> */
     public readonly array $values;

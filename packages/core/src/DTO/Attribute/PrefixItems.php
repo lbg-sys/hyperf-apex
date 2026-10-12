@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hyperf\Apex\DTO\Attribute;
 
 use Attribute;
+use Hyperf\Apex\DTO\Contract\DocumentationOnlyAttribute;
 use Hyperf\Apex\DTO\Contract\SchemaAttribute;
 use Hyperf\Apex\DTO\Schema\SchemaFragment;
 use Hyperf\Apex\DTO\Schema\SchemaReference;
@@ -15,7 +16,7 @@ use Hyperf\Apex\DTO\Schema\SchemaReference;
  * 例：#[PrefixItems('number', 'number')] 描述一个 [经度, 纬度] 坐标对。
  */
 #[Attribute(Attribute::TARGET_PROPERTY)]
-final class PrefixItems implements SchemaAttribute
+final class PrefixItems implements SchemaAttribute, DocumentationOnlyAttribute
 {
     /** @var list<string> */
     public readonly array $types;

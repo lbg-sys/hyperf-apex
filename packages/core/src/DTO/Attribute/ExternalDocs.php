@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hyperf\Apex\DTO\Attribute;
 
 use Attribute;
+use Hyperf\Apex\DTO\Contract\DocumentationOnlyAttribute;
 use Hyperf\Apex\DTO\Contract\SchemaAttribute;
 use Hyperf\Apex\DTO\Schema\SchemaFragment;
 
@@ -12,7 +13,7 @@ use Hyperf\Apex\DTO\Schema\SchemaFragment;
  * 字段的补充说明链接，会渲染成 externalDocs。
  */
 #[Attribute(Attribute::TARGET_PROPERTY)]
-final class ExternalDocs implements SchemaAttribute
+final class ExternalDocs implements SchemaAttribute, DocumentationOnlyAttribute
 {
     public function __construct(
         public readonly string $url,

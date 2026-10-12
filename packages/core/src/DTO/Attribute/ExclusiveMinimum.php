@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hyperf\Apex\DTO\Attribute;
 
 use Attribute;
+use Hyperf\Apex\DTO\Contract\DocumentationOnlyAttribute;
 use Hyperf\Apex\DTO\Contract\SchemaAttribute;
 use Hyperf\Apex\DTO\Schema\SchemaFragment;
 
@@ -13,7 +14,7 @@ use Hyperf\Apex\DTO\Schema\SchemaFragment;
  * 与闭区间的 #[Minimum]（允许等于）区分，例如价格必须大于 0 时用本 Attribute。
  */
 #[Attribute(Attribute::TARGET_PROPERTY)]
-final class ExclusiveMinimum implements SchemaAttribute
+final class ExclusiveMinimum implements SchemaAttribute, DocumentationOnlyAttribute
 {
     public function __construct(public readonly float|int $value)
     {

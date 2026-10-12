@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hyperf\Apex\DTO\Attribute;
 
 use Attribute;
+use Hyperf\Apex\DTO\Contract\DocumentationOnlyAttribute;
 use Hyperf\Apex\DTO\Contract\TypedSchemaAttribute;
 use Hyperf\Apex\DTO\Schema\SchemaFragment;
 
@@ -28,7 +29,7 @@ use Hyperf\Apex\DTO\Schema\SchemaFragment;
  *   通过，所以不会与服务端行为冲突，只是文档看起来比服务端更严。
  */
 #[Attribute(Attribute::TARGET_PROPERTY)]
-final class IntAsString implements TypedSchemaAttribute
+final class IntAsString implements TypedSchemaAttribute, DocumentationOnlyAttribute
 {
     /**
      * 十进制整数串。

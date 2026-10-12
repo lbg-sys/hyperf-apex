@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hyperf\Apex\DTO\Attribute;
 
 use Attribute;
+use Hyperf\Apex\DTO\Contract\DocumentationOnlyAttribute;
 use Hyperf\Apex\DTO\Contract\SchemaAttribute;
 use Hyperf\Apex\DTO\Schema\SchemaFragment;
 use InvalidArgumentException;
@@ -14,7 +15,7 @@ use InvalidArgumentException;
  * 注意与 #[ArraySize]（数组元素数量）区分：本 Attribute 约束的是对象的键个数。
  */
 #[Attribute(Attribute::TARGET_PROPERTY)]
-final class PropertyCount implements SchemaAttribute
+final class PropertyCount implements SchemaAttribute, DocumentationOnlyAttribute
 {
     public function __construct(
         public readonly ?int $min = null,

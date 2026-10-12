@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hyperf\Apex\DTO\Attribute;
 
 use Attribute;
+use Hyperf\Apex\DTO\Contract\DocumentationOnlyAttribute;
 use Hyperf\Apex\DTO\Contract\SchemaAttribute;
 use Hyperf\Apex\DTO\Schema\ComponentName;
 use Hyperf\Apex\DTO\Schema\SchemaFragment;
@@ -21,7 +22,7 @@ use InvalidArgumentException;
  *     #[Discriminator('contentType', ['text' => TextContentDTO::class, 'file' => FileContentDTO::class])]
  */
 #[Attribute(Attribute::TARGET_PROPERTY)]
-final class Discriminator implements SchemaAttribute
+final class Discriminator implements SchemaAttribute, DocumentationOnlyAttribute
 {
     /** @param array<string, string> $mapping 字段取值 => DTO 类名 */
     public function __construct(

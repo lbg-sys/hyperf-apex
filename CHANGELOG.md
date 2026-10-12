@@ -209,6 +209,16 @@
 
 ### 新增
 
+- `Hyperf\Apex\DTO\Contract\DocumentationOnlyAttribute`：标记「不参与请求校验」的 Schema Attribute。
+  声明式约束有「文档」与「请求校验」两条落地路径，而结构关键字（`patternProperties`、
+  `dependentRequired`、`propertyNames`、`unevaluated*`）、边界关键字（`exclusiveMinimum`、
+  `uniqueItems`、`contains`）、纯注解关键字（`format`、`const`、`title`、`example`…）以及
+  `#[IntAsString]`（只影响出站序列化）在 Hyperf 的校验体系里都没有对应规则，只能落在文档一侧。
+  33 个约束 Attribute 已标注，并新增 `test/DTO/SchemaAttributeContractTest.php` 强制
+  「每个 SchemaAttribute 必须在『参与校验』与『不参与校验』之间表态」——
+  只实现 `SchemaAttribute` 又不表态，等于「看起来会校验、实际不校验」，使用方按文档以为服务端
+  会拒绝、实际照单全收。`#[MapOf]` 是唯一例外：它自己不产出校验规则，但值层确实会被校验
+  （元素类型表达式），因此列在测试的间接校验白名单里。
 - 启动期访问声明检查 `PermissionDeclarationCheckListener` 与它的配置模板 `publish/security.php`
   （见「破坏性变更」里的说明）：漏标口径的端点此前既不会被拦下，文档侧又会被描述成公开接口。
 - `AbstractRepository::paginate()`：同一份条件同时产出当前页数据与总数（先 clone 出 count、

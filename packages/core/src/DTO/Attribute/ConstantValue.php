@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hyperf\Apex\DTO\Attribute;
 
 use Attribute;
+use Hyperf\Apex\DTO\Contract\DocumentationOnlyAttribute;
 use Hyperf\Apex\DTO\Contract\SchemaAttribute;
 use Hyperf\Apex\DTO\Schema\SchemaFragment;
 
@@ -13,7 +14,7 @@ use Hyperf\Apex\DTO\Schema\SchemaFragment;
  * 与 #[InValues] 的区别是这里只允许一个值，常用于固定的类型判别字段。
  */
 #[Attribute(Attribute::TARGET_PROPERTY)]
-final class ConstantValue implements SchemaAttribute
+final class ConstantValue implements SchemaAttribute, DocumentationOnlyAttribute
 {
     public function __construct(public readonly mixed $value)
     {

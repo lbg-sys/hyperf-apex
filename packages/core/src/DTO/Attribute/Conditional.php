@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hyperf\Apex\DTO\Attribute;
 
 use Attribute;
+use Hyperf\Apex\DTO\Contract\DocumentationOnlyAttribute;
 use Hyperf\Apex\DTO\Contract\SchemaAttribute;
 use Hyperf\Apex\DTO\Schema\SchemaFragment;
 use Hyperf\Apex\DTO\Schema\SchemaReference;
@@ -18,7 +19,7 @@ use InvalidArgumentException;
  * 例：#[Conditional(if: CronTriggerDTO::class, then: CronFieldsDTO::class)]
  */
 #[Attribute(Attribute::TARGET_PROPERTY)]
-final class Conditional implements SchemaAttribute
+final class Conditional implements SchemaAttribute, DocumentationOnlyAttribute
 {
     public function __construct(
         public readonly ?string $if = null,

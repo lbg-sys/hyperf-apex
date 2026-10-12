@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hyperf\Apex\DTO\Attribute;
 
 use Attribute;
+use Hyperf\Apex\DTO\Contract\DocumentationOnlyAttribute;
 use Hyperf\Apex\DTO\Contract\SchemaAttribute;
 use Hyperf\Apex\DTO\Schema\SchemaFragment;
 use InvalidArgumentException;
@@ -14,7 +15,7 @@ use InvalidArgumentException;
  * 例如传输方式选「自定义」时必须同时提供主机与端口：['custom' => ['host', 'port']]。
  */
 #[Attribute(Attribute::TARGET_PROPERTY)]
-final class DependentRequired implements SchemaAttribute
+final class DependentRequired implements SchemaAttribute, DocumentationOnlyAttribute
 {
     /**
      * @param array<string, list<string>> $map 触发字段名 => 连带必填的字段名列表

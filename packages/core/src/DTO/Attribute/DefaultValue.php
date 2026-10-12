@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hyperf\Apex\DTO\Attribute;
 
 use Attribute;
+use Hyperf\Apex\DTO\Contract\DocumentationOnlyAttribute;
 use Hyperf\Apex\DTO\Contract\SchemaAttribute;
 use Hyperf\Apex\DTO\Schema\SchemaFragment;
 
@@ -13,7 +14,7 @@ use Hyperf\Apex\DTO\Schema\SchemaFragment;
  * 只影响文档表达，不参与实际赋值；默认值仍由 DTO 构造器参数决定。
  */
 #[Attribute(Attribute::TARGET_PROPERTY)]
-final class DefaultValue implements SchemaAttribute
+final class DefaultValue implements SchemaAttribute, DocumentationOnlyAttribute
 {
     public function __construct(public readonly mixed $value)
     {

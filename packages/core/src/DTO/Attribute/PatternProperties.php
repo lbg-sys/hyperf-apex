@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hyperf\Apex\DTO\Attribute;
 
 use Attribute;
+use Hyperf\Apex\DTO\Contract\DocumentationOnlyAttribute;
 use Hyperf\Apex\DTO\Contract\SchemaAttribute;
 use Hyperf\Apex\DTO\Schema\SchemaFragment;
 use Hyperf\Apex\DTO\Schema\SchemaReference;
@@ -16,7 +17,7 @@ use Hyperf\Apex\DTO\Schema\SchemaReference;
  * 例：#[PatternProperties(['^count_' => 'integer', '^name_' => 'string'])]
  */
 #[Attribute(Attribute::TARGET_PROPERTY)]
-final class PatternProperties implements SchemaAttribute
+final class PatternProperties implements SchemaAttribute, DocumentationOnlyAttribute
 {
     /** @param array<string, string> $patterns 正则 => 类型引用 */
     public function __construct(public readonly array $patterns)
