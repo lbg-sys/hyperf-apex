@@ -197,6 +197,17 @@
   而报冲突，现在比较前递归按键序归一。
 - `BooleanValueRule` 的判定口径暴露为 `accepts()`：联合类型的 bool 分支复用同一份实现 ——
   同一个布尔口径写两遍时，两处漂移不会报错，表现只是两个字段对同一输入给出相反结论。
+- **文档侧的必填推断不再自己算一遍**：`DTOSchemaFactory::objectFragment()` 改为读
+  `DTOMetadataFactory` 的结论。两处各写一遍时，「`#[Required]` / 构造器默认值 / `#[Optional]`」
+  三者的优先级只要有一侧改动，同一个 DTO 就会在文档与校验上得到不同的 `required` 列表 ——
+  而这两处恰好是客户端与服务端各自的依据。
+- `TypeExpression::parse()` 对 `?Foo` / `Foo|Bar` 给出归因正确的报错：这两种是 PHP 自己的写法，
+  类型表达式不支持（可空的表达位置是属性的 PHP 类型）。此前 `?FooDTO` 会被当成类名一路走到
+  「类请写完整类名（如 `\App\Foo\DTO\BarDTO`）」，写的人于是去反复检查类名，而真实原因在别处；
+  `?Foo[]`、`list<?Foo>`、`array<string, ?Foo>` 这些嵌套写法同样归到这里。
+  `parseOrLeaf()`（请求热路径）的容忍度不变：认不出的写法仍退化成「按类型名原样处理」。
+- 修掉 `DTOSchemaFactory::fragmentForTypeName()` 上重复挂着的两个 docblock（给 `$nested`
+  补注释时留下的编辑痕迹；PHP 只认最后一个，前一段成了死注释）。
 
 - 控制器发现规则重写：不再要求路径里含 `/Controller/`，也不再从文件内容里用正则抽类名 ——
   前者会让放在别的目录下的控制器静默从文档里消失，后者遇到 `app/Controller/` 下的
