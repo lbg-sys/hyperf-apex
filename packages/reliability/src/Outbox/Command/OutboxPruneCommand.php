@@ -18,7 +18,7 @@ use Hyperf\Contract\ConfigInterface;
  * 清理刻意不放进常驻消费进程：投递要的是低延迟，清理要的是低频批量，
  * 两者节奏不同，混在一个循环里会让其中一个迁就另一个。应用把它挂到 crontab 即可。
  */
-#[Command(name: 'outbox:prune', description: 'Clean up succeeded outbox events outside the retention window.')]
+#[Command(name: 'outbox:prune', description: '清理超出保留窗口的已成功发件箱事件。')]
 final class OutboxPruneCommand extends HyperfCommand
 {
     public function __construct(

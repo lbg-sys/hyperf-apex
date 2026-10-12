@@ -138,62 +138,12 @@ php bin/hyperf.php vendor:publish hyperf-apex/metrics --id=config
 
 ## WebSocket 网关（`hyperf-apex/websocket`）
 
-### 1. 运行前置（启动期会校验，不满足直接起不来）
+完整说明（运行前置、声明入口与事件、鉴权、推送、协议与内置事件、全部配置项）见
+[`packages/websocket/README.md`](packages/websocket/README.md)。
 
-| 配置项 | 为什么 |
-| :--- | :--- |
-| `server.type` + `server.settings.worker_num` | 协程服务器（Hyperf 3.1+ 默认）下 `Sender` 只能在当前 worker 内投递，`worker_num` 因此必须为 `1`；确实只收不发时用 `websocket.allow_multi_worker=true` 显式接受限制。传统 `Hyperf\Server\Server` 会广播 PipeMessage，不受此限 |
-| `server.settings.package_max_length` | 必须 ≥ `websocket.max_frame_bytes`，否则超限帧在协议层就被 Swoole 断开，客户端拿到的是断连而不是错误信封 |
-| `websocket.idle_timeout` | 空闲连接回收时限（默认 180 秒），不能与 Swoole 的 `heartbeat_idle_time` 同时为 0：连接索引是定长表，写满后新连接会被直接拒绝且不会自愈 |
-
-### 2. 声明入口与事件
-
-```php
-#[WsGateway(path: '/ws/hub', server: 'ws', endpoint: 'hub', name: '主连接', middlewares: [WsIntegrationHandshakeMiddleware::class])]
-final class HubWsGatewayController extends WsGatewayController
-{
-}
-
-final class HubEventHandler
-{
-    #[WsRoute('demo.created')]
-    public function handle(DemoCreatedPayloadDTO $payload, WsRequestContext $context): DemoCreatedResultDTO
-    {
-        return new DemoCreatedResultDTO($payload->recordId, $context->connectionId());
-    }
-}
-```
-
-- 入口类必须实现 `OnOpenInterface` / `OnMessageInterface` / `OnCloseInterface`（继承 `WsGatewayController` 即可，子类只负责带注解）。
-- 处理器签名由启动期反射校验：一个 payload DTO（`AbstractDTO` 子类）+ 可选的 `WsRequestContext`，返回 `void` 或响应 DTO。
-- 事件名格式为 `{domain}.{action}`（全小写、点号分隔），`sys.` 前缀为内置事件保留。
-
-### 3. 鉴权
-
-- **集成凭证**：入口中间件挂 `WsIntegrationHandshakeMiddleware`，token 走 query 参数 `token`（浏览器 WebSocket API 无法自定义请求头），与 HTTP 侧的 `#[IntegrationAccess]` 共用同一个 `integration.integration_token` 配置、同一套判据。**token 会因此出现在网关与访问日志里**，部署时应在网关层屏蔽该参数的记录。
-- **用户身份**：组件不内置登录态鉴权（它属于应用的身份体系）。应用自建握手中间件，校验通过后调用 `WsHandshakeContext::setPrincipal($principal)` 交出身份，入口会在 `onOpen` 时把它组装进会话；token 解析可复用 `WsBearerToken::token($request, 'token')`（第二个参数是 query 参数名）。
-- 校验失败必须发生在 `onOpen` 之前（中间件里抛 `BusinessException` 即可），否则会出现「连接已建立但没有身份」的中间态。
-
-### 4. 推送
-
-业务侧只依赖 `WsPusherInterface`：`pushToUser()` / `pushToRoom()` / `pushToEndpoint()` / `broadcast()`。
-**不承诺可靠投递** —— 连接断开期间的推送即丢失，需要可靠性的业务走 HTTP 拉取。
-
-### 5. 协议
-
-| 方向 | 报文 |
-| :--- | :--- |
-| 客户端 → 服务端 | `{"id": "1", "event": "demo.created", "data": {...}}`，`data` 必须是 JSON 对象 |
-| 服务端 → 客户端（响应） | `{"id": "1", "event": "demo.created", "code": 0, "message": "成功", "data": {...}}` |
-| 服务端 → 客户端（推送） | `{"id": "...", "event": "demo.created", "type": "push", "data": {...}}` |
-
-内置事件：`sys.ping`（心跳，客户端定期发）、`sys.pong`、`sys.subscribe` / `sys.unsubscribe`（房间订阅，`data.room` 为 1-64 位 `[A-Za-z0-9_.:-]`）、`sys.error`（所有失败信封的 `event`）。
-
-约定：
-
-- **任何业务错误都只回错误信封，不断开连接**（含协议错误、限流、未注册事件、业务拒绝），客户端的重连策略只用于处理真正的网络断开。
-- 单连接消息限流默认「1 秒 50 条」，超限回 `10007`（`TOO_MANY_REQUESTS`）；用 `websocket.rate_limit.max_messages=0` 关闭。
-- 客户端必须在 `websocket.idle_timeout` 内至少发送一条消息（通常就是 `sys.ping`），否则连接会被服务端回收。
+要点：网关默认强制单 Worker（协程服务器下 `Sender` 只在本 Worker 内投递，多 Worker 会静默丢推送，
+确实只收不发时用 `websocket.allow_multi_worker=true` 显式接受）；推送**不承诺可靠投递**；
+任何业务错误都只回错误信封、不断开连接。
 
 ---
 

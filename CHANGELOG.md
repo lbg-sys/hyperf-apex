@@ -5,11 +5,23 @@
 
 ## [Unreleased]
 
+### 新增
+
+- **每个包目录各自带 `README.md`**（6 个包）：拆包发布时包目录就是只读仓的根，而 Packagist 的
+  包页面渲染的正是那个仓的 README —— 此前 6 个只读仓与 Packagist 页面上没有任何用法说明，
+  用户只能回去翻源码。内容是各包的安装、发布 ID、配置项表、能力与入口、需要自行实现的契约。
+  新增 `test/Packaging/PackageReadmeTest.php` 断言「每个包都有 README，且写了安装命令、
+  指向变更记录、长度不是占位」，以后新增包不会再漏。
+
 ### 变更
 
 - 去掉 `publish/access_log.php` 默认排除里的 `/health/*`：它是为那个从未实现、已在 4.0.0 中
   整体移除的就绪探针留的默认值。应用自己暴露了健康检查端点、又不想让它进 access 日志时，
   写进 `access_log.exclude` 或 `ACCESS_LOG_EXCLUDE_PATHS` 即可。
+- 主仓库 README 的 WebSocket 章节整体移入 `packages/websocket/README.md`（包内版本另补了完整的
+  配置项表），主仓只留指针 —— 同一份说明留两处，迟早会有一处不更新。
+- 4 条命令描述里有 3 条是英文（`api-doc:generate`、`api-doc:generate-apifox`、`outbox:prune`），
+  改为中文与 `schema:model-check` 对齐 —— 它们会出现在 `bin/hyperf.php list` 的输出里。
 
 ## [4.0.0] - 2026-10-12
 

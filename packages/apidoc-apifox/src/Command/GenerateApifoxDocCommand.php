@@ -11,7 +11,7 @@ use Hyperf\Command\Command as HyperfCommand;
 use Hyperf\Contract\ConfigInterface;
 use JsonException;
 
-#[Command(name: 'api-doc:generate-apifox', description: 'Generate the Apifox native document for WebSocket contracts.')]
+#[Command(name: 'api-doc:generate-apifox', description: '把 WebSocket 契约导出成 Apifox 原生文档。')]
 final class GenerateApifoxDocCommand extends HyperfCommand
 {
     public function __construct(
