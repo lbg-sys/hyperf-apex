@@ -21,7 +21,7 @@ use ReflectionMethod;
 
 enum TestPermission: string
 {
-    case QUESTION_READ = 'question:read';
+    case RECORD_READ = 'record:read';
     case USER_CREATE = 'user:create';
 }
 
@@ -39,7 +39,7 @@ enum TestGroupedPermission: string implements PermissionCodeInterface
     use PermissionCodeTrait;
 
     #[BelongsToGroup(TestGroup::GENERAL)]
-    case POST_READ = 'post:read';
+    case ITEM_READ = 'item:read';
 }
 
 #[Authenticated]
@@ -50,9 +50,9 @@ class SampleSecureController
     {
     }
 
-    #[RequirePermission([TestPermission::QUESTION_READ, 'content:write'], guard: 'admin')]
+    #[RequirePermission([TestPermission::RECORD_READ, 'record:write'], guard: 'admin')]
     #[RequireRole('manager', guard: 'admin')]
-    public function questionAction(): void
+    public function recordAction(): void
     {
     }
 
@@ -81,15 +81,15 @@ final class SecurityTest extends TestCase
 
     public function testMethodLevelRequirePermissionAndRole(): void
     {
-        $method = new ReflectionMethod(SampleSecureController::class, 'questionAction');
+        $method = new ReflectionMethod(SampleSecureController::class, 'recordAction');
         $declaration = $this->reader->read($method);
 
         $this->assertFalse($declaration->public);
-        $this->assertSame(['question:read', 'content:write'], $declaration->permissions);
+        $this->assertSame(['record:read', 'record:write'], $declaration->permissions);
         $this->assertSame(['manager'], $declaration->roles);
         $this->assertSame('admin', $declaration->guard);
         $this->assertTrue($declaration->requiresPermission());
-        $this->assertContains('question:read', $declaration->requiredCodeValues());
+        $this->assertContains('record:read', $declaration->requiredCodeValues());
     }
 
     public function testFallbackToClassLevelAuthenticated(): void
@@ -103,14 +103,14 @@ final class SecurityTest extends TestCase
 
     public function testPermissionSet(): void
     {
-        $set = new PermissionSet(['question:read', 'user:profile:read']);
+        $set = new PermissionSet(['record:read', 'user:profile:read']);
 
-        $this->assertTrue($set->has('question:read'));
-        $this->assertTrue($set->has(TestPermission::QUESTION_READ));
+        $this->assertTrue($set->has('record:read'));
+        $this->assertTrue($set->has(TestPermission::RECORD_READ));
         $this->assertFalse($set->has('non_existent'));
 
-        $this->assertTrue($set->hasAll(['question:read', 'user:profile:read']));
-        $this->assertFalse($set->hasAll(['question:read', 'missing']));
+        $this->assertTrue($set->hasAll(['record:read', 'user:profile:read']));
+        $this->assertFalse($set->hasAll(['record:read', 'missing']));
 
         $this->assertTrue($set->hasAny(['missing', 'user:profile:read']));
         $this->assertFalse($set->hasAny(['missing1', 'missing2']));
@@ -118,9 +118,9 @@ final class SecurityTest extends TestCase
 
     public function testPermissionCodeTraitAndGroup(): void
     {
-        $permission = TestGroupedPermission::POST_READ;
+        $permission = TestGroupedPermission::ITEM_READ;
 
-        $this->assertSame('post:read', $permission->identifier());
+        $this->assertSame('item:read', $permission->identifier());
         $this->assertSame(TestGroup::GENERAL, $permission->group());
     }
 }

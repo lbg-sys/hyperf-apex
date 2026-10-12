@@ -85,12 +85,12 @@ final class ApifoxDocumentBuilderTest extends TestCase
     public function testBusinessEventSectionRendersFieldTable(): void
     {
         $this->registerGateway();
-        WsAnnotationRegistrar::route(DeviceStatusHandler::class, 'handle', 'hub.status');
+        WsAnnotationRegistrar::route(HubStatusHandler::class, 'handle', 'hub.status');
 
         $description = $this->description();
 
         $this->assertStringContainsString('### `hub.status`', $description);
-        $this->assertStringContainsString(DeviceStatusHandler::class . '::handle', $description);
+        $this->assertStringContainsString(HubStatusHandler::class . '::handle', $description);
         // 字段表复用 DTOSchemaFactory：#[FieldDescription] 自动进文档，不需要维护第二份说明。
         // 有默认值的字段把缺省值也拼进说明列（`hubNo = ''` → 默认值 ""）。
         $this->assertStringContainsString('| `hubNo` | string | 否 | 设备编号；默认值 "" |', $description);
@@ -175,7 +175,7 @@ final class ApifoxGatewayFixture implements OnOpenInterface, OnMessageInterface,
     }
 }
 
-final readonly class DeviceStatusPayloadDTO extends AbstractDTO
+final readonly class HubStatusPayloadDTO extends AbstractDTO
 {
     public function __construct(
         #[FieldDescription('设备编号')]
@@ -185,9 +185,9 @@ final readonly class DeviceStatusPayloadDTO extends AbstractDTO
 }
 
 /** 处理器说明落进 Markdown 的「处理器」一行，这里顺带验证类名渲染。 */
-final class DeviceStatusHandler
+final class HubStatusHandler
 {
-    public function handle(DeviceStatusPayloadDTO $payload): void
+    public function handle(HubStatusPayloadDTO $payload): void
     {
     }
 }

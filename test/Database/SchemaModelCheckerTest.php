@@ -125,8 +125,8 @@ final class SchemaModelCheckerTest extends TestCase
     {
         // 关系属性与非标量注解类型（如大写开头的类）都不代表数据库列，不该被误报成陈旧注解。
         $model = $this->model([
-            'properties' => ['id' => 'int', 'name' => 'string', 'alert' => 'AlertEvent', 'devices' => 'HasMany'],
-            'relationProperties' => ['devices' => true],
+            'properties' => ['id' => 'int', 'name' => 'string', 'alert' => 'AlertEvent', 'items' => 'HasMany'],
+            'relationProperties' => ['items' => true],
         ]);
 
         $this->assertSame([], $this->checker->check([$model], ['default' => $this->catalog()]));

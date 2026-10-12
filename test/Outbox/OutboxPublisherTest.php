@@ -18,7 +18,7 @@ final class OutboxPublisherTest extends TestCase
     {
         $repository = new FakeOutboxEventRepository();
         $result = $this->publisher($repository)->publish(
-            new FakeOutboxEvent('order.paid', 'scope:1', 'order-1', ['orderId' => 1])
+            new FakeOutboxEvent('demo.created', 'scope:1', 'record-1', ['recordId' => 1])
         );
 
         $this->assertTrue($result->created);
@@ -26,12 +26,12 @@ final class OutboxPublisherTest extends TestCase
         $row = $repository->raw($result->id);
         $this->assertNotNull($row);
         $this->assertSame(OutboxEventStatus::PENDING->value, $row['status']);
-        $this->assertSame('order.paid', $row['event_type']);
+        $this->assertSame('demo.created', $row['event_type']);
         $this->assertSame('scope:1', $row['scope_key']);
         $this->assertSame(8, $row['max_attempts']);
         $this->assertSame(0, $row['attempt_count']);
         $this->assertSame(
-            hash('sha256', json_encode(['orderId' => 1], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)),
+            hash('sha256', json_encode(['recordId' => 1], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)),
             $row['payload_hash'],
         );
     }
@@ -41,11 +41,11 @@ final class OutboxPublisherTest extends TestCase
         $repository = new FakeOutboxEventRepository();
         $publisher = $this->publisher($repository);
 
-        $first = $publisher->publish(new FakeOutboxEvent('order.paid', 'scope:1', 'order-1', [
+        $first = $publisher->publish(new FakeOutboxEvent('demo.created', 'scope:1', 'record-1', [
             'amount' => 100,
             'buyer' => ['id' => 7, 'name' => '甲'],
         ]));
-        $second = $publisher->publish(new FakeOutboxEvent('order.paid', 'scope:1', 'order-1', [
+        $second = $publisher->publish(new FakeOutboxEvent('demo.created', 'scope:1', 'record-1', [
             'buyer' => ['name' => '甲', 'id' => 7],
             'amount' => 100,
         ]));
@@ -61,21 +61,21 @@ final class OutboxPublisherTest extends TestCase
         $repository = new FakeOutboxEventRepository();
         $publisher = $this->publisher($repository);
 
-        $publisher->publish(new FakeOutboxEvent('order.paid', 'scope:1', 'order-1', ['amount' => 100]));
+        $publisher->publish(new FakeOutboxEvent('demo.created', 'scope:1', 'record-1', ['amount' => 100]));
 
         $this->expectException(BusinessException::class);
         $this->expectExceptionMessage('相同幂等键对应的事件载荷不同。');
 
-        $publisher->publish(new FakeOutboxEvent('order.paid', 'scope:1', 'order-1', ['amount' => 999]));
+        $publisher->publish(new FakeOutboxEvent('demo.created', 'scope:1', 'record-1', ['amount' => 999]));
     }
 
     public function testEventTypeMaxAttemptsOverrideWins(): void
     {
         $repository = new FakeOutboxEventRepository();
-        $publisher = $this->publisher($repository, ['order.paid' => 3]);
+        $publisher = $this->publisher($repository, ['demo.created' => 3]);
 
-        $overridden = $publisher->publish(new FakeOutboxEvent('order.paid', 'scope:1', 'order-1', ['a' => 1]));
-        $fallback = $publisher->publish(new FakeOutboxEvent('order.shipped', 'scope:1', 'order-1', ['a' => 1]));
+        $overridden = $publisher->publish(new FakeOutboxEvent('demo.created', 'scope:1', 'record-1', ['a' => 1]));
+        $fallback = $publisher->publish(new FakeOutboxEvent('demo.updated', 'scope:1', 'record-1', ['a' => 1]));
 
         $this->assertSame(3, $repository->raw($overridden->id)['max_attempts']);
         $this->assertSame(8, $repository->raw($fallback->id)['max_attempts']);
@@ -86,8 +86,8 @@ final class OutboxPublisherTest extends TestCase
         $repository = new FakeOutboxEventRepository();
         $publisher = $this->publisher($repository);
 
-        $scopeOne = $publisher->publish(new FakeOutboxEvent('order.paid', 'scope:1', 'order-1', ['a' => 1]));
-        $scopeTwo = $publisher->publish(new FakeOutboxEvent('order.paid', 'scope:2', 'order-1', ['a' => 1]));
+        $scopeOne = $publisher->publish(new FakeOutboxEvent('demo.created', 'scope:1', 'record-1', ['a' => 1]));
+        $scopeTwo = $publisher->publish(new FakeOutboxEvent('demo.created', 'scope:2', 'record-1', ['a' => 1]));
 
         $this->assertTrue($scopeOne->created);
         $this->assertTrue($scopeTwo->created);

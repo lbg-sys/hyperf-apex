@@ -26,7 +26,7 @@ final class IdempotencyServiceTest extends TestCase
 {
     public function testFirstClaimAcquiresTheRecord(): void
     {
-        $claim = $this->service()->claim('caller', 'POST /api/order/create', 'req-1', 'hash');
+        $claim = $this->service()->claim('caller', 'POST /api/demo/create', 'req-1', 'hash');
 
         $this->assertTrue($claim->acquired);
         $this->assertMatchesRegularExpression('/^[0-9a-f]{32}$/', (string) $claim->lockToken);
@@ -37,10 +37,10 @@ final class IdempotencyServiceTest extends TestCase
     public function testReplayReturnsTheStoredResponse(): void
     {
         $service = $this->service();
-        $claim = $service->claim('caller', 'POST /api/order/create', 'req-1', 'hash');
+        $claim = $service->claim('caller', 'POST /api/demo/create', 'req-1', 'hash');
         $service->complete($claim, IdempotencyStatus::SUCCEEDED, 200, 'application/json', '{"ok":true}');
 
-        $replay = $service->claim('caller', 'POST /api/order/create', 'req-1', 'hash');
+        $replay = $service->claim('caller', 'POST /api/demo/create', 'req-1', 'hash');
 
         // 重放不执行、不发令牌，但把上次的结果原样交给调用方。
         $this->assertFalse($replay->acquired);
@@ -53,11 +53,11 @@ final class IdempotencyServiceTest extends TestCase
     public function testSameRequestIdWithDifferentPayloadIsRejected(): void
     {
         $service = $this->service();
-        $claim = $service->claim('caller', 'POST /api/order/create', 'req-1', 'hash-a');
+        $claim = $service->claim('caller', 'POST /api/demo/create', 'req-1', 'hash-a');
         $service->complete($claim, IdempotencyStatus::SUCCEEDED, 200, 'application/json', '{}');
 
         try {
-            $service->claim('caller', 'POST /api/order/create', 'req-1', 'hash-b');
+            $service->claim('caller', 'POST /api/demo/create', 'req-1', 'hash-b');
             $this->fail('相同请求 ID 但载荷不同，应当拒绝而不是当作重放。');
         } catch (BusinessException $exception) {
             $this->assertSame(ErrorCode::RESOURCE_CONFLICT->value, $exception->getErrorCode());
@@ -68,10 +68,10 @@ final class IdempotencyServiceTest extends TestCase
     public function testProcessingRecordWithoutTimeoutIsRejected(): void
     {
         $service = $this->service();
-        $service->claim('caller', 'POST /api/order/create', 'req-1', 'hash');
+        $service->claim('caller', 'POST /api/demo/create', 'req-1', 'hash');
 
         try {
-            $service->claim('caller', 'POST /api/order/create', 'req-1', 'hash');
+            $service->claim('caller', 'POST /api/demo/create', 'req-1', 'hash');
             $this->fail('记录还在处理中且未超时，应当让调用方稍后重试。');
         } catch (BusinessException $exception) {
             $this->assertSame(ErrorCode::RESOURCE_CONFLICT->value, $exception->getErrorCode());
@@ -84,21 +84,21 @@ final class IdempotencyServiceTest extends TestCase
         $repository = new InMemoryIdempotencyRecordRepository();
         $service = new IdempotencyService($repository, $this->config());
 
-        $first = $service->claim('caller', 'POST /api/order/create', 'req-1', 'hash');
+        $first = $service->claim('caller', 'POST /api/demo/create', 'req-1', 'hash');
         $repository->expire($first->record->id);
 
         // 记录已过期、本应接管，但 restart 的 CAS 落败（另一个进程抢先接管）。
         $repository->failRestart = true;
 
         try {
-            $service->claim('caller', 'POST /api/order/create', 'req-1', 'hash');
+            $service->claim('caller', 'POST /api/demo/create', 'req-1', 'hash');
             $this->fail('接管落败后应当看到「处理中」，而不是自认为接管成功。');
         } catch (BusinessException $exception) {
             $this->assertStringContainsString('正在处理中', $exception->getMessage());
         }
 
         // 落败方没拿到令牌：原令牌保持不变（接管方才是持有者）。
-        $this->assertSame($first->lockToken, $repository->find('caller', 'POST /api/order/create', 'req-1')?->lock_token);
+        $this->assertSame($first->lockToken, $repository->find('caller', 'POST /api/demo/create', 'req-1')?->lock_token);
     }
 
     public function testCompletedRecordWithMissingResponseIsRejected(): void
@@ -106,7 +106,7 @@ final class IdempotencyServiceTest extends TestCase
         $repository = new InMemoryIdempotencyRecordRepository();
         $service = new IdempotencyService($repository, $this->config());
 
-        $claim = $service->claim('caller', 'POST /api/order/create', 'req-1', 'hash');
+        $claim = $service->claim('caller', 'POST /api/demo/create', 'req-1', 'hash');
         $service->complete($claim, IdempotencyStatus::SUCCEEDED, 200, 'application/json', '{}');
         // 数据被部分写入：状态终态但响应体丢了。
         $repository->corruptResponse($claim->record->id);
@@ -115,7 +115,7 @@ final class IdempotencyServiceTest extends TestCase
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('已完成的幂等记录缺少响应结果');
 
-        $service->claim('caller', 'POST /api/order/create', 'req-1', 'hash');
+        $service->claim('caller', 'POST /api/demo/create', 'req-1', 'hash');
     }
 
     public function testPruneBatchesAndStopsWhenShorterThanBatchSize(): void

@@ -27,10 +27,10 @@ final class WsHandlerRegistryTest extends TestCase
 
     public function testValidDeclarationIsRegisteredWithInferredSignature(): void
     {
-        WsAnnotationRegistrar::route(ValidHandler::class, 'paid', 'order.paid');
+        WsAnnotationRegistrar::route(ValidHandler::class, 'paid', 'demo.created');
 
         $registry = new WsHandlerRegistry();
-        $definition = $registry->find('order.paid');
+        $definition = $registry->find('demo.created');
 
         $this->assertNotNull($definition);
         $this->assertSame(RegistryPayloadDTO::class, $definition->payloadClass);
@@ -39,16 +39,16 @@ final class WsHandlerRegistryTest extends TestCase
         $this->assertNull($definition->contextPosition);
         $this->assertSame(ValidHandler::class . '::paid', $definition->handlerId());
 
-        $this->assertTrue($registry->has('order.paid'));
-        $this->assertSame(['order.paid'], $registry->events());
-        $this->assertNull($registry->find('order.unknown'));
+        $this->assertTrue($registry->has('demo.created'));
+        $this->assertSame(['demo.created'], $registry->events());
+        $this->assertNull($registry->find('demo.unknown'));
     }
 
     public function testContextParameterIsDetectedAndVoidResponseIsAllowed(): void
     {
-        WsAnnotationRegistrar::route(ContextHandler::class, 'track', 'order.track');
+        WsAnnotationRegistrar::route(ContextHandler::class, 'track', 'demo.track');
 
-        $definition = (new WsHandlerRegistry())->find('order.track');
+        $definition = (new WsHandlerRegistry())->find('demo.track');
 
         $this->assertNotNull($definition);
         $this->assertSame(0, $definition->contextPosition);
@@ -59,7 +59,7 @@ final class WsHandlerRegistryTest extends TestCase
 
     public function testEventNameMustUseDomainActionFormat(): void
     {
-        WsAnnotationRegistrar::route(ScalarParamHandler::class, 'handle', 'OrderPaid');
+        WsAnnotationRegistrar::route(ScalarParamHandler::class, 'handle', 'DemoCreated');
 
         $this->assertDeclarationError('不符合 {domain}.{action} 格式');
     }
@@ -73,43 +73,43 @@ final class WsHandlerRegistryTest extends TestCase
 
     public function testScalarParameterIsRejected(): void
     {
-        WsAnnotationRegistrar::route(ScalarParamHandler::class, 'handle', 'order.scalar');
+        WsAnnotationRegistrar::route(ScalarParamHandler::class, 'handle', 'demo.scalar');
 
         $this->assertDeclarationError('类型必须是 payload DTO');
     }
 
     public function testMissingPayloadIsRejected(): void
     {
-        WsAnnotationRegistrar::route(NoPayloadHandler::class, 'handle', 'order.none');
+        WsAnnotationRegistrar::route(NoPayloadHandler::class, 'handle', 'demo.none');
 
         $this->assertDeclarationError('至少需要一个 AbstractDTO 子类参数作为 payload');
     }
 
     public function testMultiplePayloadParametersAreRejected(): void
     {
-        WsAnnotationRegistrar::route(TwoPayloadHandler::class, 'handle', 'order.two');
+        WsAnnotationRegistrar::route(TwoPayloadHandler::class, 'handle', 'demo.two');
 
         $this->assertDeclarationError('有多个 AbstractDTO 参数');
     }
 
     public function testMultipleContextParametersAreRejected(): void
     {
-        WsAnnotationRegistrar::route(TwoContextHandler::class, 'handle', 'order.ctx');
+        WsAnnotationRegistrar::route(TwoContextHandler::class, 'handle', 'demo.ctx');
 
         $this->assertDeclarationError('有多个 WsRequestContext 参数');
     }
 
     public function testReturnTypeMustBeDtoOrVoid(): void
     {
-        WsAnnotationRegistrar::route(BadReturnHandler::class, 'handle', 'order.bad_return');
+        WsAnnotationRegistrar::route(BadReturnHandler::class, 'handle', 'demo.bad_return');
 
         $this->assertDeclarationError('返回类型必须是 void、null 或 AbstractDTO 子类');
     }
 
     public function testDuplicateEventIsRejected(): void
     {
-        WsAnnotationRegistrar::route(DuplicateAHandler::class, 'handle', 'order.dup');
-        WsAnnotationRegistrar::route(DuplicateBHandler::class, 'handle', 'order.dup');
+        WsAnnotationRegistrar::route(DuplicateAHandler::class, 'handle', 'demo.dup');
+        WsAnnotationRegistrar::route(DuplicateBHandler::class, 'handle', 'demo.dup');
 
         $this->assertDeclarationError('重复注册');
     }
@@ -119,8 +119,8 @@ final class WsHandlerRegistryTest extends TestCase
         // 三处独立问题分布在三个声明上：事件名格式、标量参数、返回类型。
         // 一次列清才能一次改完，否则改一个重启一次。
         WsAnnotationRegistrar::route(NoPayloadHandler::class, 'handle', 'Bad');
-        WsAnnotationRegistrar::route(ScalarParamHandler::class, 'handle', 'order.scalar');
-        WsAnnotationRegistrar::route(BadReturnHandler::class, 'handle', 'order.bad_return');
+        WsAnnotationRegistrar::route(ScalarParamHandler::class, 'handle', 'demo.scalar');
+        WsAnnotationRegistrar::route(BadReturnHandler::class, 'handle', 'demo.bad_return');
 
         $errors = $this->declarationErrors();
 
@@ -153,14 +153,14 @@ final class WsHandlerRegistryTest extends TestCase
 
 final readonly class RegistryPayloadDTO extends AbstractDTO
 {
-    public function __construct(public string $orderId = '')
+    public function __construct(public string $recordId = '')
     {
     }
 }
 
 final readonly class RegistryResultDTO extends AbstractDTO
 {
-    public function __construct(public string $orderId = '')
+    public function __construct(public string $recordId = '')
     {
     }
 }
@@ -169,7 +169,7 @@ final class ValidHandler
 {
     public function paid(RegistryPayloadDTO $payload): RegistryResultDTO
     {
-        return new RegistryResultDTO($payload->orderId);
+        return new RegistryResultDTO($payload->recordId);
     }
 }
 
@@ -212,7 +212,7 @@ final class BadReturnHandler
 {
     public function handle(RegistryPayloadDTO $payload): string
     {
-        return $payload->orderId;
+        return $payload->recordId;
     }
 }
 

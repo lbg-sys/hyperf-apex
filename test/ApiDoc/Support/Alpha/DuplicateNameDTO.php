@@ -11,7 +11,7 @@ namespace Hyperf\Apex\Test\ApiDoc\Support\Alpha;
  */
 final readonly class DuplicateNameDTO
 {
-    public function __construct(public string $orderId = '')
+    public function __construct(public string $recordId = '')
     {
     }
 }

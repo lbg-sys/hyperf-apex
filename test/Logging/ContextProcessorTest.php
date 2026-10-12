@@ -35,7 +35,7 @@ final class ContextProcessorTest extends TestCase
         $this->assertArrayHasKey('coroutine_id', $result->context);
         $this->assertSame('req-1', $result->context['request_id']);
         $this->assertSame('POST', $result->context['method']);
-        $this->assertSame('/api/orders', $result->context['path']);
+        $this->assertSame('/api/items', $result->context['path']);
         $this->assertSame('10.0.0.1', $result->context['client_ip']);
         // 记录自身的 context 原样保留。
         $this->assertSame('v', $result->context['existing']);
@@ -71,7 +71,7 @@ final class ContextProcessorTest extends TestCase
      */
     private function request(array $headers = [], ?string $remoteAddr = null): ServerRequestInterface
     {
-        $request = new Request('POST', '/api/orders');
+        $request = new Request('POST', '/api/items');
         foreach ($headers as $name => $value) {
             $request = $request->withHeader($name, $value);
         }

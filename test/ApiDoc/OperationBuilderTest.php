@@ -132,7 +132,7 @@ final class OperationBuilderTest extends TestCase
         $secured = $this->single('get_item');
         $this->assertIsArray($secured->security);
         $this->assertSame('bearerAuth', $secured->security[0]->scheme);
-        $this->assertSame(['order.read'], $secured->x['required-permissions'] ?? null);
+        $this->assertSame(['demo.read'], $secured->x['required-permissions'] ?? null);
 
         $this->assertNull($this->single('no_params')->security);
     }
@@ -223,7 +223,7 @@ final class OperationFixture
     #[ApiHeader(name: 'X-Trace-Id', description: '追踪标识')]
     #[PublicAccess]
     #[ApiOperation(summary: '读取条目', tags: ['甲'], description: '详细说明')]
-    #[RequirePermission('order.read')]
+    #[RequirePermission('demo.read')]
     #[RateLimit(name: 'op_read', capacity: 5, refill: 1)]
     #[GetMapping(path: 'get_item')]
     public function getItem(#[FromQuery] int $page = 1): OperationItemDTO

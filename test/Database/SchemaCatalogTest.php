@@ -21,7 +21,7 @@ final class SchemaCatalogTest extends TestCase
         $catalog = new SchemaCatalog('core_', ['core_users' => '用户表'], ['core_users' => []]);
 
         $this->assertTrue($catalog->hasTable('users'));
-        $this->assertFalse($catalog->hasTable('orders'));
+        $this->assertFalse($catalog->hasTable('demo_records'));
     }
 
     public function testTableCommentAndColumnsAreReturned(): void

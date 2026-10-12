@@ -63,9 +63,9 @@
 - DTO 属性名与实际接口字段名保持一致。需要向 Repository 传数组时，只允许在 Service 内部转换。
 - **DTO 属性名使用小写驼峰**，例如 `$contentType`、`$coverFileId`、`$createTime`；不使用蛇形，即使对应的数据库列名是蛇形。请求参数水合和响应序列化都按属性名直接匹配，不做命名转换——属性名就是接口字段名，改属性名即改接口契约。
 - 数据库列名保持蛇形，两种命名的转换在 Service 内完成：`['cover_file_id' => $dto->coverFileId]`。响应 DTO 的 `fromModel()` 同理，读 Model 的蛇形列、赋值给驼峰属性。
-- 例外只有「字段名真正由外部契约固定」的场景，例如第三方回调载荷里对方定义的字段（七牛回调的 `key`、`hash`、`fsize` 来自对方的 callbackBody 模板变量）。这类属性要在类注释里写明受外部约束。**自己拼进请求或回调体的字段不算例外**——两端都在我们手里就用驼峰，改名时同步发送方。
+- 例外只有「字段名真正由外部契约固定」的场景，例如第三方回调载荷里由对方模板变量定义的字段（字段名与形态取自对方约定的回调模板，我们无权改名）。这类属性要在类注释里写明受外部约束。**自己拼进请求或回调体的字段不算例外**——两端都在我们手里就用驼峰，改名时同步发送方。
 - 创建、更新、列表查询、详情、删除和响应使用各自语义明确的 DTO，不使用一个 DTO 混合多个操作。
-- 不使用 `IdDTO`、`CommonDTO`、`DataDTO` 等语义模糊的公共 DTO。使用领域和操作明确的名称，例如 `QuestionDetailDTO`、`QuestionDeleteDTO`、`AnswerTaskListDTO`。
+- 不使用 `IdDTO`、`CommonDTO`、`DataDTO` 等语义模糊的公共 DTO。使用领域和操作明确的名称，例如 `ContentDetailDTO`、`ContentDeleteDTO`、`ContentListDTO`。
 - 列表查询必须使用独立查询 DTO，例如 `TaskListDTO`。新增筛选条件时扩展查询 DTO，不增加 Service 的散乱标量参数或无类型过滤数组。
 - 嵌套数组使用嵌套 DTO，并通过 `#[ArrayOf(ItemDTO::class)]` 声明元素类型；不在 Service 公共方法中传递未经水合的业务数组。
 - 响应 DTO 负责隔离 Model 和接口输出，Service 不直接向 Controller 返回数据库 Model。
@@ -158,7 +158,7 @@
 - 请求 Schema 从方法参数上的请求 DTO 自动生成；响应外层结构由 `ApiResponseDTO` 中唯一标记 `#[ResponsePayload]` 的属性确定。
 - 文件上传用方法级 `#[FileField('file', '待上传的文件')]` 声明表单里的文件字段——文件不经过 DTO（Service 从 `RequestInterface::file()` 取），类型系统里没有痕迹，必须显式声明。
 - 组件名取 DTO 短类名。不同命名空间的同名 DTO 会在生成时直接报错，需要重命名其中之一，不允许靠加前缀绕开。
-- operationId 由「HTTP 方法 + URL path」确定性派生（如 `post_api_visibility_admin_account_devices_bind`），**不取自控制器短类名**。唯一性继承自 OpenAPI 对 `(path, method)` 的全局唯一要求：不同端（如 Admin 端与集成端）出现同名控制器不再需要重命名避让，客户端标识跟随 URL 走，控制器改名或挪目录不会破坏已发布文档。
+- operationId 由「HTTP 方法 + URL path」确定性派生（如 `post_api_user_profile_update`），**不取自控制器短类名**。唯一性继承自 OpenAPI 对 `(path, method)` 的全局唯一要求：不同命名空间下出现同名控制器不再需要重命名避让，客户端标识跟随 URL 走，控制器改名或挪目录不会破坏已发布文档。
 - 生成命令在应用内执行：`swoole62 bin/hyperf.php api-doc:generate`（本仓库不提供控制台入口）。生成时会跑规格校验，**任何 error 或 warning 都会让命令失败**——上游把「`type: array` 但没有 `items`」这类骗人的文档归到 warning，放过它等于放过一份说了谎的契约。
 - 编译器自带的 `validate()` 只做 5 项检查（`info`/`info.title` 存在、components 非空、license 字段互斥、`type: array` 缺 items、requestBody 用在不支持的方法上）。悬空 `$ref`、孤儿组件、`operationId` 重复、响应是否覆盖真实错误路径它都不管，这些由生成器自己的构建期断言和 `test/` 下的测试负责。
 - 生成文件为 `runtime/api-doc/openapi.json`。

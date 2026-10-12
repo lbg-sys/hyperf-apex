@@ -38,7 +38,7 @@ final class OutboxDeliveryServiceTest extends TestCase
     public function testSuccessWritesSucceededAndReleasesLease(): void
     {
         $repository = new FakeOutboxEventRepository();
-        $handler = new FakeOutboxHandler('order.paid', OutboxHandleResultDTO::success('已投递'));
+        $handler = new FakeOutboxHandler('demo.created', OutboxHandleResultDTO::success('已投递'));
         $service = $this->service($repository, [$handler]);
         $id = $this->seed($repository);
 
@@ -57,7 +57,7 @@ final class OutboxDeliveryServiceTest extends TestCase
     public function testRetryableSchedulesBackoff(): void
     {
         $repository = new FakeOutboxEventRepository();
-        $handler = new FakeOutboxHandler('order.paid', OutboxHandleResultDTO::retryable('下游 502'));
+        $handler = new FakeOutboxHandler('demo.created', OutboxHandleResultDTO::retryable('下游 502'));
         $service = $this->service($repository, [$handler]);
         $id = $this->seed($repository);
 
@@ -76,7 +76,7 @@ final class OutboxDeliveryServiceTest extends TestCase
     public function testRetryAfterFromHandlerOverridesBackoff(): void
     {
         $repository = new FakeOutboxEventRepository();
-        $handler = new FakeOutboxHandler('order.paid', OutboxHandleResultDTO::retryable('稍后再试', 600));
+        $handler = new FakeOutboxHandler('demo.created', OutboxHandleResultDTO::retryable('稍后再试', 600));
         $service = $this->service($repository, [$handler]);
         $id = $this->seed($repository);
 
@@ -88,7 +88,7 @@ final class OutboxDeliveryServiceTest extends TestCase
     public function testBackoffIsCappedByMaxSeconds(): void
     {
         $repository = new FakeOutboxEventRepository();
-        $handler = new FakeOutboxHandler('order.paid', OutboxHandleResultDTO::retryable('下游 502'));
+        $handler = new FakeOutboxHandler('demo.created', OutboxHandleResultDTO::retryable('下游 502'));
         $service = $this->service($repository, [$handler]);
         $id = $this->seed($repository, maxAttempts: 10);
         // 认领后是第 8 次：30 * 2^7 = 3840 秒，被 backoff_max_seconds 夹到 1800。
@@ -102,7 +102,7 @@ final class OutboxDeliveryServiceTest extends TestCase
     public function testRetryableAfterExhaustedAttemptsBecomesDeadLetter(): void
     {
         $repository = new FakeOutboxEventRepository();
-        $handler = new FakeOutboxHandler('order.paid', OutboxHandleResultDTO::retryable('还是 502'));
+        $handler = new FakeOutboxHandler('demo.created', OutboxHandleResultDTO::retryable('还是 502'));
         $service = $this->service($repository, [$handler]);
         $id = $this->seed($repository, maxAttempts: 1);
 
@@ -119,7 +119,7 @@ final class OutboxDeliveryServiceTest extends TestCase
     public function testPermanentFailureMarksFailed(): void
     {
         $repository = new FakeOutboxEventRepository();
-        $handler = new FakeOutboxHandler('order.paid', OutboxHandleResultDTO::permanent('订单不存在'));
+        $handler = new FakeOutboxHandler('demo.created', OutboxHandleResultDTO::permanent('资源不存在'));
         $service = $this->service($repository, [$handler]);
         $id = $this->seed($repository);
 
@@ -128,7 +128,7 @@ final class OutboxDeliveryServiceTest extends TestCase
         $row = $repository->raw($id);
         $this->assertSame(OutboxEventStatus::FAILED->value, $row['status']);
         $this->assertSame('permanent', $row['last_failure_type']);
-        $this->assertSame('订单不存在', $row['last_error']);
+        $this->assertSame('资源不存在', $row['last_error']);
         $this->assertSame('2026-10-09 10:00:00', $row['fail_time']);
     }
 
@@ -149,7 +149,7 @@ final class OutboxDeliveryServiceTest extends TestCase
     public function testHandlerExceptionIsRetryable(): void
     {
         $repository = new FakeOutboxEventRepository();
-        $handler = new FakeOutboxHandler('order.paid', null, new RuntimeException('连接超时'));
+        $handler = new FakeOutboxHandler('demo.created', null, new RuntimeException('连接超时'));
         $service = $this->service($repository, [$handler]);
         $id = $this->seed($repository);
 
@@ -163,7 +163,7 @@ final class OutboxDeliveryServiceTest extends TestCase
     public function testSupersededWorkerCannotWriteBack(): void
     {
         $repository = new FakeOutboxEventRepository();
-        $handler = new FakeOutboxHandler('order.paid');
+        $handler = new FakeOutboxHandler('demo.created');
         $service = $this->service($repository, [$handler]);
         $id = $this->seed($repository);
 
@@ -257,15 +257,15 @@ final class OutboxDeliveryServiceTest extends TestCase
         );
     }
 
-    private function seed(FakeOutboxEventRepository $repository, string $key = 'order-1', int $maxAttempts = 8): int
+    private function seed(FakeOutboxEventRepository $repository, string $key = 'record-1', int $maxAttempts = 8): int
     {
         $event = $repository->create([
             'scope_key' => 'scope:1',
-            'event_type' => 'order.paid',
+            'event_type' => 'demo.created',
             'idempotency_key' => $key,
             'aggregate_type' => null,
             'aggregate_id' => null,
-            'payload' => ['orderId' => 1],
+            'payload' => ['recordId' => 1],
             'payload_hash' => 'seed-hash',
             'status' => OutboxEventStatus::PENDING->value,
             'attempt_count' => 0,

@@ -55,9 +55,9 @@ final class SchemaFragmentTranslatorTest extends TestCase
 
     public function testComponentNameIsCarriedAsComponentKey(): void
     {
-        $schema = $this->translate(SchemaFragment::of(['type' => 'object']), 'OrderDTO');
+        $schema = $this->translate(SchemaFragment::of(['type' => 'object']), 'SampleDTO');
 
-        $this->assertSame('OrderDTO', $schema->component);
+        $this->assertSame('SampleDTO', $schema->component);
         // swagger-php 6.12 起 `schema` 作为组件键已弃用（会触发 deprecation），只用 `component`。
         $this->assertNull($schema->schema);
     }
@@ -67,18 +67,18 @@ final class SchemaFragmentTranslatorTest extends TestCase
         $schema = $this->translate(SchemaFragment::of([
             'type' => 'object',
             'properties' => [
-                'orderId' => SchemaFragment::of(['type' => 'string']),
+                'recordId' => SchemaFragment::of(['type' => 'string']),
                 'amount' => SchemaFragment::of(['type' => 'integer']),
             ],
-            'required' => ['orderId'],
+            'required' => ['recordId'],
         ]));
 
         $properties = $schema->properties;
         $this->assertIsArray($properties);
         $this->assertCount(2, $properties);
-        $this->assertSame(['orderId', 'amount'], array_map(static fn (OA\Property $item): string => $item->property, $properties));
+        $this->assertSame(['recordId', 'amount'], array_map(static fn (OA\Property $item): string => $item->property, $properties));
         $this->assertSame('integer', $properties[1]->schema->type);
-        $this->assertSame(['orderId'], $schema->required);
+        $this->assertSame(['recordId'], $schema->required);
     }
 
     public function testSchemaValuedKeywordsAreTranslatedRecursively(): void
@@ -124,7 +124,7 @@ final class SchemaFragmentTranslatorTest extends TestCase
         $schema = $this->translate(SchemaFragment::of([
             'discriminator' => ['propertyName' => 'kind', 'mapping' => ['a' => '#/components/schemas/A']],
             'externalDocs' => ['url' => 'https://example.com/doc', 'description' => '更多说明'],
-            'xml' => ['name' => 'order'],
+            'xml' => ['name' => 'record'],
         ]));
 
         $this->assertInstanceOf(OA\Discriminator::class, $schema->discriminator);
@@ -132,7 +132,7 @@ final class SchemaFragmentTranslatorTest extends TestCase
         $this->assertInstanceOf(OA\ExternalDocumentation::class, $schema->externalDocs);
         $this->assertSame('https://example.com/doc', $schema->externalDocs->url);
         $this->assertInstanceOf(OA\Xml::class, $schema->xml);
-        $this->assertSame('order', $schema->xml->name);
+        $this->assertSame('record', $schema->xml->name);
     }
 
     public function testMerchantExtensionsAreCarriedToTheSchema(): void

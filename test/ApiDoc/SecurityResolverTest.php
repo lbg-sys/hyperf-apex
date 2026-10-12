@@ -85,7 +85,7 @@ final class SecurityResolverTest extends TestCase
 
     public function testRequiredPermissionsAreExposedForTheDocument(): void
     {
-        $this->assertSame(['order.read'], $this->resolver()->requiredPermissions($this->method('permissionOnly')));
+        $this->assertSame(['demo.read'], $this->resolver()->requiredPermissions($this->method('permissionOnly')));
         $this->assertSame([], $this->resolver()->requiredPermissions($this->method('public')));
     }
 
@@ -136,13 +136,13 @@ final class SecurityFixtureController
     {
     }
 
-    #[RequirePermission('order.read')]
+    #[RequirePermission('demo.read')]
     public function permissionOnly(): void
     {
     }
 
     #[IntegrationAccess]
-    #[RequirePermission('order.read')]
+    #[RequirePermission('demo.read')]
     public function integrationWithPermission(): void
     {
     }

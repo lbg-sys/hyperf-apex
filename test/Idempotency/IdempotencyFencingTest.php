@@ -24,12 +24,12 @@ final class IdempotencyFencingTest extends TestCase
         $repository = new InMemoryIdempotencyRecordRepository();
         $service = $this->service($repository);
 
-        $first = $service->claim('caller', 'POST /api/order/create', 'req-1', 'payload-hash');
+        $first = $service->claim('caller', 'POST /api/demo/create', 'req-1', 'payload-hash');
         $this->assertTrue($first->acquired);
 
         // 执行卡住、记录过期，同键请求接管同一条记录。
         $repository->expire($first->record->id);
-        $second = $service->claim('caller', 'POST /api/order/create', 'req-1', 'payload-hash');
+        $second = $service->claim('caller', 'POST /api/demo/create', 'req-1', 'payload-hash');
         $this->assertTrue($second->acquired);
         $this->assertSame($first->record->id, $second->record->id);
         $this->assertNotSame($first->lockToken, $second->lockToken);
@@ -47,10 +47,10 @@ final class IdempotencyFencingTest extends TestCase
         $repository = new InMemoryIdempotencyRecordRepository();
         $service = $this->service($repository);
 
-        $first = $service->claim('caller', 'POST /api/order/create', 'req-1', 'payload-hash');
+        $first = $service->claim('caller', 'POST /api/demo/create', 'req-1', 'payload-hash');
         $this->assertTrue($service->complete($first, IdempotencyStatus::SUCCEEDED, 200, 'application/json', '{"ok":true}'));
 
-        $replay = $service->claim('caller', 'POST /api/order/create', 'req-1', 'payload-hash');
+        $replay = $service->claim('caller', 'POST /api/demo/create', 'req-1', 'payload-hash');
         $this->assertFalse($replay->acquired);
         $this->assertNull($replay->lockToken);
 

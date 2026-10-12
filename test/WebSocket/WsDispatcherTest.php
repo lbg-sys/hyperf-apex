@@ -98,7 +98,7 @@ final class WsDispatcherTest extends TestCase
 
     public function testUnknownEventIsRejected(): void
     {
-        $response = $this->dispatcher()->dispatch($this->session(), '{"event":"order.paid"}');
+        $response = $this->dispatcher()->dispatch($this->session(), '{"event":"demo.created"}');
 
         $this->assertSame(ErrorCode::INVALID_ARGUMENT->value, $response->code);
         $this->assertStringContainsString('未注册的事件', $response->message);
@@ -208,21 +208,21 @@ final class WsDispatcherTest extends TestCase
 
     public function testBusinessEventHydratesPayloadAndProjectsPrincipal(): void
     {
-        WsAnnotationRegistrar::route(OrderPaidHandler::class, 'paid', 'order.paid');
+        WsAnnotationRegistrar::route(DemoCreatedHandler::class, 'paid', 'demo.created');
 
-        $handler = new OrderPaidHandler();
+        $handler = new DemoCreatedHandler();
         $context = new FakePrincipalContext();
-        $dispatcher = $this->dispatcher(null, [], $context, new MapContainer([OrderPaidHandler::class => $handler]));
+        $dispatcher = $this->dispatcher(null, [], $context, new MapContainer([DemoCreatedHandler::class => $handler]));
 
         $response = $dispatcher->dispatch(
             WsSession::open('ws', 1, '/ws/hub', $this->principal(), 1_700_000_000),
-            '{"id":"1","event":"order.paid","data":{"orderId":"A-1"}}',
+            '{"id":"1","event":"demo.created","data":{"recordId":"A-1"}}',
         );
 
         $this->assertSame(ErrorCode::SUCCESS->value, $response->code);
-        $this->assertSame('A-1', $handler->received->orderId);
-        $this->assertInstanceOf(OrderPaidResultDTO::class, $response->data);
-        $this->assertSame('A-1', $response->data->orderId);
+        $this->assertSame('A-1', $handler->received->recordId);
+        $this->assertInstanceOf(DemoCreatedResultDTO::class, $response->data);
+        $this->assertSame('A-1', $response->data->recordId);
 
         // onMessage 是独立协程：身份投影必须成对出现，否则会串到别的协程。
         $this->assertSame(1, $context->setCalls);
@@ -231,44 +231,44 @@ final class WsDispatcherTest extends TestCase
 
     public function testHandlerWithoutPrincipalIsCalledWithoutProjection(): void
     {
-        WsAnnotationRegistrar::route(OrderPaidHandler::class, 'paid', 'order.paid');
+        WsAnnotationRegistrar::route(DemoCreatedHandler::class, 'paid', 'demo.created');
 
-        $handler = new OrderPaidHandler();
+        $handler = new DemoCreatedHandler();
         $context = new FakePrincipalContext();
-        $dispatcher = $this->dispatcher(null, [], $context, new MapContainer([OrderPaidHandler::class => $handler]));
+        $dispatcher = $this->dispatcher(null, [], $context, new MapContainer([DemoCreatedHandler::class => $handler]));
 
         // 集成凭证接入的会话没有用户身份。
-        $dispatcher->dispatch($this->session(), '{"id":"1","event":"order.paid","data":{"orderId":"A-2"}}');
+        $dispatcher->dispatch($this->session(), '{"id":"1","event":"demo.created","data":{"recordId":"A-2"}}');
 
-        $this->assertSame('A-2', $handler->received->orderId);
+        $this->assertSame('A-2', $handler->received->recordId);
         $this->assertSame(0, $context->setCalls);
         $this->assertSame(0, $context->clearCalls);
     }
 
     public function testHandlerMayDeclareRequestContext(): void
     {
-        WsAnnotationRegistrar::route(OrderTrackHandler::class, 'track', 'order.track');
+        WsAnnotationRegistrar::route(DemoTrackHandler::class, 'track', 'demo.tracked');
 
-        $handler = new OrderTrackHandler();
-        $dispatcher = $this->dispatcher(null, [], null, new MapContainer([OrderTrackHandler::class => $handler]));
+        $handler = new DemoTrackHandler();
+        $dispatcher = $this->dispatcher(null, [], null, new MapContainer([DemoTrackHandler::class => $handler]));
 
         $response = $dispatcher->dispatch(
             $this->session(),
-            '{"id":"2","event":"order.track","data":{"orderId":"A-3"}}',
+            '{"id":"2","event":"demo.tracked","data":{"recordId":"A-3"}}',
         );
 
         $this->assertSame(ErrorCode::SUCCESS->value, $response->code);
         $this->assertSame('ws:1', $handler->connectionId);
-        $this->assertSame('A-3', $response->data->orderId);
+        $this->assertSame('A-3', $response->data->recordId);
     }
 
     public function testInvalidDeclarationBecomesInternalErrorEnvelope(): void
     {
         // 声明写错（把标量当 payload）是部署期错误：注册表直接抛 WsDeclarationException，
         // 派发层把它兜成 INTERNAL_ERROR，而不是让连接层看到异常。
-        WsAnnotationRegistrar::route(BrokenDeclarationHandler::class, 'broken', 'order.broken');
+        WsAnnotationRegistrar::route(BrokenDeclarationHandler::class, 'broken', 'demo.broken');
 
-        $response = $this->dispatcher()->dispatch($this->session(), '{"id":"4","event":"order.broken"}');
+        $response = $this->dispatcher()->dispatch($this->session(), '{"id":"4","event":"demo.broken"}');
 
         $this->assertSame(ErrorCode::INTERNAL_ERROR->value, $response->code);
         $this->assertSame('4', $response->id);
@@ -433,41 +433,41 @@ final class MapContainer implements ContainerInterface
     }
 }
 
-final readonly class OrderPaidPayloadDTO extends AbstractDTO
+final readonly class DemoCreatedPayloadDTO extends AbstractDTO
 {
-    public function __construct(public string $orderId = '')
+    public function __construct(public string $recordId = '')
     {
     }
 }
 
-final readonly class OrderPaidResultDTO extends AbstractDTO
+final readonly class DemoCreatedResultDTO extends AbstractDTO
 {
-    public function __construct(public string $orderId = '')
+    public function __construct(public string $recordId = '')
     {
     }
 }
 
-final class OrderPaidHandler
+final class DemoCreatedHandler
 {
-    public OrderPaidPayloadDTO $received;
+    public DemoCreatedPayloadDTO $received;
 
-    public function paid(OrderPaidPayloadDTO $payload): OrderPaidResultDTO
+    public function paid(DemoCreatedPayloadDTO $payload): DemoCreatedResultDTO
     {
         $this->received = $payload;
 
-        return new OrderPaidResultDTO($payload->orderId);
+        return new DemoCreatedResultDTO($payload->recordId);
     }
 }
 
-final class OrderTrackHandler
+final class DemoTrackHandler
 {
     public string $connectionId = '';
 
-    public function track(WsRequestContext $context, OrderPaidPayloadDTO $payload): OrderPaidResultDTO
+    public function track(WsRequestContext $context, DemoCreatedPayloadDTO $payload): DemoCreatedResultDTO
     {
         $this->connectionId = $context->connectionId();
 
-        return new OrderPaidResultDTO($payload->orderId);
+        return new DemoCreatedResultDTO($payload->recordId);
     }
 }
 
