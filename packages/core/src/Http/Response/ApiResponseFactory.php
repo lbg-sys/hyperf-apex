@@ -19,7 +19,7 @@ final class ApiResponseFactory
         $class = $config->get('response.response_dto');
         if (! is_string($class) || ! is_subclass_of($class, ApiResponseInterface::class)) {
             throw new InvalidArgumentException(sprintf(
-                'Response DTO must implement %s, %s given.',
+                '响应 DTO 必须实现 %s，当前是 %s。',
                 ApiResponseInterface::class,
                 is_string($class) ? $class : get_debug_type($class)
             ));

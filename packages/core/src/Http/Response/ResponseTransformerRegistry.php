@@ -57,7 +57,7 @@ final class ResponseTransformerRegistry
             }
             if (! $transformer instanceof ResponseTransformerInterface) {
                 throw new InvalidArgumentException(sprintf(
-                    'Response transformer must implement %s, %s given.',
+                    '响应转换器必须实现 %s，当前是 %s。',
                     ResponseTransformerInterface::class,
                     is_object($transformer) ? $transformer::class : get_debug_type($transformer)
                 ));

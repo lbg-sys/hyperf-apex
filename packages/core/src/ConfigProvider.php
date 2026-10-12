@@ -42,7 +42,7 @@ class ConfigProvider
             'publish' => [
                 [
                     'id' => 'config',
-                    'description' => 'The core configuration files for apex foundation.',
+                    'description' => 'apex 基础设施（core）的配置模板。',
                     'source' => __DIR__ . '/../publish/',
                     'destination' => BASE_PATH . '/config/autoload/',
                 ],

@@ -38,7 +38,7 @@ final class ResponseBuilderTest extends TestCase
     public function testMissingPayloadMarkerIsRejected(): void
     {
         $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('must have exactly one property marked');
+        $this->expectExceptionMessage('必须恰好有一个属性标注');
 
         $this->builder(NoPayloadResponseDTO::class)->success($this->endpointMethod());
     }
@@ -46,7 +46,7 @@ final class ResponseBuilderTest extends TestCase
     public function testDuplicatePayloadMarkerIsRejected(): void
     {
         $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('must have exactly one property marked');
+        $this->expectExceptionMessage('必须恰好有一个属性标注');
 
         $this->builder(TwoPayloadResponseDTO::class)->success($this->endpointMethod());
     }

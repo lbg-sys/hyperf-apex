@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hyperf\Apex\RateLimit;
 
 use Hyperf\Apex\Logging\LoggerChannels;
+use Hyperf\Apex\Support\Time;
 use Hyperf\Contract\ConfigInterface;
 use Hyperf\Logger\LoggerFactory;
 use Hyperf\Redis\RedisFactory;
@@ -209,8 +210,9 @@ LUA;
         return $mode === 'open';
     }
 
+    // 窗口边界要与其它 worker 对齐，因此这里是墙上时钟（而不是时长测量用的单调时钟）。
     private function nowMilliseconds(): int
     {
-        return (int) (microtime(true) * 1000);
+        return (int) Time::now()->getTimestampMs();
     }
 }

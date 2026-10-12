@@ -45,6 +45,6 @@ final class NotBooleanRule implements Rule, ValidatorAwareRule
     {
         $message = $this->validator->getTranslator()->get('validation.integer');
 
-        return $message === 'validation.integer' ? ['The :attribute must be an integer.'] : $message;
+        return $message === 'validation.integer' ? [':attribute 必须是整数。'] : $message;
     }
 }

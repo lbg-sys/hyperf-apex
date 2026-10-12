@@ -208,6 +208,21 @@
   `parseOrLeaf()`（请求热路径）的容忍度不变：认不出的写法仍退化成「按类型名原样处理」。
 - 修掉 `DTOSchemaFactory::fragmentForTypeName()` 上重复挂着的两个 docblock（给 `$nested`
   补注释时留下的编辑痕迹；PHP 只认最后一个，前一段成了死注释）。
+- **跨模块的规则符合性收尾**（不按模块、按仓库自己的硬规则全仓扫了一遍）：
+  - 9 处英文异常信息改中文并带上定位：`apidoc` 的响应 DTO 校验，`core` 的响应 DTO / 编码器 /
+    转换器 / 参数解析器契约校验、`BusinessException` 的成功码校验、集成凭证未配置
+    （后者现在直接报出配置键 `integration.integration_token`）。
+  - 3 处校验规则的英文**兜底**文案改中文（`validation.enum` / `validation.boolean` /
+    `validation.integer` 在语言键缺失时才会走到的那一段）。
+  - 7 处 `ConfigProvider` 的发布描述改中文（`vendor:publish` 的列表里会打印）。
+- **`metrics` 与 `websocket` 里 9 处绕过 `Time::now()` 的时间取值**统一到同一个入口：这些地方
+  此前直接 `time()`（限流窗口、空闲连接判据、指标采样），而 `CarbonImmutable::setTestNow()`
+  对它们无效 —— 涉及超时与过期的用例只能靠真实等待。其中两处刻意不同，并已在注释里写明：
+  `GaugeCollectorRegistry` 的缓存 TTL 是「时长」而不是「时间点」，改用单调时钟（墙上时钟回拨
+  不会让缓存提前失效）；`RateLimiter::nowMilliseconds()` 则必须与其它 worker 的窗口边界对齐，
+  仍用墙上时钟，只是改走 `Time::now()`。
+- `hyperf-apex/reliability` 已发布迁移里的 `->useCurrent()` 保持不变：它们随 2.0.0 发布，
+  按约定不再修改；运行时的写入路径已由 `AbstractRepository` 与模型统一补时间。
 
 - 控制器发现规则重写：不再要求路径里含 `/Controller/`，也不再从文件内容里用正则抽类名 ——
   前者会让放在别的目录下的控制器静默从文档里消失，后者遇到 `app/Controller/` 下的

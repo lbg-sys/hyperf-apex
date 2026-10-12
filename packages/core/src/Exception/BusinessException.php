@@ -33,7 +33,7 @@ class BusinessException extends RuntimeException
 
         if ($errorCode instanceof ErrorCode) {
             if ($errorCode === ErrorCode::SUCCESS) {
-                throw new InvalidArgumentException('Business exception cannot use the success error code.');
+                throw new InvalidArgumentException('业务异常不能使用成功错误码。');
             }
 
             $message ??= $errorCode->getMessage();

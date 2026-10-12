@@ -29,7 +29,7 @@ class ConfigProvider
             'publish' => [
                 [
                     'id' => 'config',
-                    'description' => 'The configuration file for apex apifox document export.',
+                    'description' => 'apex apifox 文档导出的配置模板。',
                     'source' => __DIR__ . '/../publish/',
                     'destination' => BASE_PATH . '/config/autoload/',
                 ],

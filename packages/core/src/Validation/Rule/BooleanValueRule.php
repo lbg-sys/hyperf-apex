@@ -58,6 +58,6 @@ final class BooleanValueRule implements Rule, ValidatorAwareRule
     {
         $message = $this->validator->getTranslator()->get('validation.boolean');
 
-        return $message === 'validation.boolean' ? ['The :attribute field must be true or false.'] : $message;
+        return $message === 'validation.boolean' ? [':attribute 必须是布尔值。'] : $message;
     }
 }

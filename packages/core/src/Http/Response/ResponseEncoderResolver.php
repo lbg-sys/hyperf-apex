@@ -25,7 +25,7 @@ final class ResponseEncoderResolver
         $class = $this->encoderClass($method);
         $encoder = $this->container->get($class);
         if (! $encoder instanceof ResponseEncoderInterface) {
-            throw new InvalidArgumentException(sprintf('Response encoder must implement %s, %s given.', ResponseEncoderInterface::class, get_debug_type($encoder)));
+            throw new InvalidArgumentException(sprintf('响应编码器必须实现 %s，当前是 %s。', ResponseEncoderInterface::class, get_debug_type($encoder)));
         }
         return $encoder;
     }

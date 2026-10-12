@@ -54,6 +54,6 @@ final class EnumValueRule implements Rule, ValidatorAwareRule
     {
         $message = $this->validator->getTranslator()->get('validation.enum');
 
-        return $message === 'validation.enum' ? ['The selected :attribute is invalid.'] : $message;
+        return $message === 'validation.enum' ? ['选中的 :attribute 无效。'] : $message;
     }
 }

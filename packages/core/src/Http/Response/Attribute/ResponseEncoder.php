@@ -15,7 +15,7 @@ final class ResponseEncoder
     public function __construct(public readonly string $type)
     {
         if (! is_subclass_of($type, ResponseEncoderInterface::class)) {
-            throw new InvalidArgumentException(sprintf('Response encoder must implement %s, %s given.', ResponseEncoderInterface::class, $type));
+            throw new InvalidArgumentException(sprintf('响应编码器必须实现 %s，当前是 %s。', ResponseEncoderInterface::class, $type));
         }
     }
 }

@@ -45,13 +45,13 @@ class ConfigProvider
             'publish' => [
                 [
                     'id' => 'config',
-                    'description' => 'The configuration files for apex reliability suite.',
+                    'description' => 'apex 可靠性套件的配置模板。',
                     'source' => __DIR__ . '/../publish/config/',
                     'destination' => BASE_PATH . '/config/autoload/',
                 ],
                 [
                     'id' => 'migrations',
-                    'description' => 'The database migrations for apex reliability suite.',
+                    'description' => 'apex 可靠性套件的数据库迁移。',
                     'source' => __DIR__ . '/../publish/migrations/',
                     'destination' => BASE_PATH . '/migrations/',
                 ],

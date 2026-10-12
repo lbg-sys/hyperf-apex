@@ -31,7 +31,7 @@ final class HandlerMethodArgumentResolverRegistry
             }
             if (! $resolver instanceof HandlerMethodArgumentResolverInterface) {
                 throw new InvalidArgumentException(sprintf(
-                    'Argument resolver must implement %s, %s given.',
+                    '参数解析器必须实现 %s，当前是 %s。',
                     HandlerMethodArgumentResolverInterface::class,
                     is_object($resolver) ? $resolver::class : get_debug_type($resolver)
                 ));

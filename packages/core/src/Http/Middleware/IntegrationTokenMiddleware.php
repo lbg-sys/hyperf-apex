@@ -24,7 +24,7 @@ final class IntegrationTokenMiddleware extends AbstractMiddleware
     {
         $expectedToken = (string) $this->config->get('integration.integration_token', '');
         if ($expectedToken === '') {
-            throw new RuntimeException('Integration token is not configured.');
+            throw new RuntimeException('集成凭证未配置：请设置 integration.integration_token。');
         }
 
         $providedToken = $request->getHeaderLine(self::HEADER);
