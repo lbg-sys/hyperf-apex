@@ -5,6 +5,21 @@
 
 ## [Unreleased]
 
+### 新增
+
+- `hyperf-apex/wecom`：`WeComLoginService::buildAuthorizeUrl()` 一次返回**三种**授权入口，新增
+  `loginPanel`（PC 浏览器**内嵌**登录面板 `ww.createWWLoginPanel` 的初始化参数：`loginType` /
+  `appId` / `agentId` / `redirectUri` / `state`）。三个入口共用同一个 `redirect_uri` 与 `state`，
+  code 兑换链路不变（仍是同一个 `cgi-bin/auth/getuserinfo`）。
+  - 面板参数里的 `redirectUri` 按面板文档要求**原样**下发（不 URLEncode），与两个授权地址里的
+    编码形态不同；`redirect_type` / `panel_size` / `lang` 是纯前端的交互与展示选择，不下发。
+  - `WeComAuthorizeUrlDTO` 新增属性 `loginPanel`：手工 `new` 该 DTO 的调用点需要跟改；
+    作为接口响应返回时只是多一个字段（前端可先行按新契约联调）。
+  - `buildAuthorizeUrl()` 的 `redirectUri` 传空串现在按「未覆盖」处理（回落到企业配置），
+    与 `alias` 的口径一致。
+  - 登录面板只覆盖**企业自建应用**（`login_type = CorpApp`）：第三方应用与服务商代开发应用的
+    code 要走 `cgi-bin/service/*` 那套兑换接口，不在组件范围内。
+
 ## [0.1.1] - 2026-10-13
 
 ### 新增

@@ -129,7 +129,7 @@ final class AuthService
     {
     }
 
-    /** 第一步：把两个入口地址与 state 交给前端 */
+    /** 第一步：把三个入口与 state 交给前端 */
     public function authorizeUrl(): \Hyperf\Apex\WeCom\DTO\WeComAuthorizeUrlDTO
     {
         return $this->login->buildAuthorizeUrl(new WeComAuthorizeRequestDTO());   // 可传 alias / redirectUri
@@ -143,15 +143,50 @@ final class AuthService
 }
 ```
 
-- 返回的 `inAppAuthorizeUrl` 给「企微客户端内打开页面」（静默授权），`qrCodeAuthorizeUrl` 给
-  「PC 浏览器扫码」；两者共用同一个 `redirect_uri` 与 `state`。两个地址的域名都必须在企微后台
-  配为**可信域名**，否则授权页直接报错，而我们这边看不到任何请求。
+三种入口一次给全，前端按场景选一个，**共用同一个 `redirect_uri` 与 `state`**：
+
+| 字段 | 场景 |
+| :--- | :--- |
+| `inAppAuthorizeUrl` | 企业微信**客户端内**打开页面（静默授权，用户无感） |
+| `qrCodeAuthorizeUrl` | PC 浏览器，跳转到企微托管的扫码页 |
+| `loginPanel` | PC 浏览器，在本页**内嵌**二维码面板（`ww.createWWLoginPanel`），见下 |
+
+前端内嵌面板的用法（面板参数直接就是 `params`，`state` 用 `loginPanel.state` 或顶层 `state`）：
+
+```js
+const res = await get('/auth/wecom_authorize_url');
+
+ww.createWWLoginPanel({
+  el: '#ww_login',
+  params: {
+    login_type: res.loginPanel.loginType,     // 自建应用固定 CorpApp
+    appid: res.loginPanel.appId,              // 企业 CorpID
+    agentid: res.loginPanel.agentId,
+    redirect_uri: res.loginPanel.redirectUri, // 原样传入，**不要** URLEncode
+    state: res.loginPanel.state,
+  },
+  redirect_type: 'callback',                  // top / self 也可以，前端按交互选
+  onLoginSuccess({ code }) {
+    // 把 code + state 提交给后端登录接口
+    post('/auth/wecom_login', { code, state: res.state });
+  },
+});
+```
+
+`redirect_type`、`panel_size`、`lang` 是纯前端的交互与展示选择，服务端不感知也不下发。
+
+其余约定：
+
+- 两个地址与面板参数里的 `redirect_uri` 域名都必须在企微后台配为**可信域名**，
+  否则入口直接报错，而我们这边看不到任何请求。
 - `state` 校验通过即作废，第二次用同一个 `state` 必然失败。它是 128 位随机值，不落库，
   存在应用缓存里（`state_ttl`，默认 300 秒），TTL 就是它的一生。
 - **`code` 换 userid 走的就是 `api()` 那条路**：同一个 Application、同一个 access_token 缓存、
-  同一套超时与代理设置，没有第二套 HTTP 客户端。
+  同一套超时与代理设置，没有第二套 HTTP 客户端。三种入口的 code 是同一类，兑换方式也相同。
 - 只认**企业内部成员**：响应里没有 `userid`（外部联系人拿到的是 `openid`）时按未认证拒绝，
   不会把 openid 当成登录标识。
+- 只覆盖**企业自建应用**（面板参数 `login_type = CorpApp`）。第三方应用与服务商代开发应用的
+  授权入口相同，但 code 要走 `cgi-bin/service/*` 那套兑换接口，不在本组件范围内。
 - 本组件只回答「这个 code 是谁」。会话、令牌、平台账号绑定由应用自己做 —— 能进企业微信只说明
   是同事，不等于应该拥有这个系统的账号。
 
