@@ -34,7 +34,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 检出目标 tag
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           # 显式指定目标 tag：手动重跑历史 tag 时，默认检出的是所选分支 ——
           # 拿「今天的分支配置」去比「当年的 tag」必然误报。
@@ -60,7 +60,7 @@ jobs:
     steps:
       # subtree split 要遍历完整历史，默认的浅克隆会算出错误结果。
       - name: 检出代码
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           # 必须关掉持久化凭据：checkout 会把 GITHUB_TOKEN 写进 git 的 http extraheader，
