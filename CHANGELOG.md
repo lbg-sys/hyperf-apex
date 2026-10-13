@@ -5,6 +5,8 @@
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-10-13
+
 ### 新增
 
 - **新包 `hyperf-apex/wecom`（企业微信）**：多企业配置与 alias 路由、进程内复用 EasyWeChat
