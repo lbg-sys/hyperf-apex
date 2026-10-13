@@ -1,0 +1,48 @@
+{
+    "name": "hyperf-apex/wecom",
+    "description": "Apex WeCom (企业微信) toolkit for Hyperf: multi-corp account resolver, shared EasyWeChat application, access token cache and OAuth login",
+    "type": "library",
+    "license": "Apache-2.0",
+    "keywords": [
+        "hyperf",
+        "swoole",
+        "apex",
+        "wecom",
+        "wechat-work",
+        "easywechat"
+    ],
+    "homepage": "https://github.com/lbg-sys/hyperf-apex-wecom",
+    "support": {
+        "issues": "https://github.com/lbg-sys/hyperf-apex-wecom/issues",
+        "source": "https://github.com/lbg-sys/hyperf-apex-wecom"
+    },
+    "authors": [
+        {
+            "name": "lbg-sys",
+            "homepage": "https://github.com/lbg-sys"
+        }
+    ],
+    "require": {
+        "php": ">=8.4",
+        "hyperf-apex/core": "^0.1",
+        "hyperf/cache": "~3.2.0",
+        "hyperf/config": "~3.2.0",
+        "hyperf/logger": "~3.2.0",
+        "psr/simple-cache": "^1.0 || ^2.0 || ^3.0",
+        "w7corp/easywechat": "^6.7"
+    },
+    "autoload": {
+        "psr-4": {
+            "Hyperf\\Apex\\WeCom\\": "src/"
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "0.1.x-dev",
+            "dev-main": "0.1.x-dev"
+        },
+        "hyperf": {
+            "config": "Hyperf\\Apex\\WeCom\\ConfigProvider"
+        }
+    }
+}

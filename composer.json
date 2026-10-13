@@ -28,7 +28,8 @@
         "hyperf-apex/apidoc-apifox": "^0.1",
         "hyperf-apex/websocket": "^0.1",
         "hyperf-apex/reliability": "^0.1",
-        "hyperf-apex/metrics": "^0.1"
+        "hyperf-apex/metrics": "^0.1",
+        "hyperf-apex/wecom": "^0.1"
     },
     "require-dev": {
         "friendsofphp/php-cs-fixer": "^3.68",
@@ -53,6 +54,7 @@
             "Hyperf\\Apex\\ApiDoc\\Apifox\\": "packages/apidoc-apifox/src/",
             "Hyperf\\Apex\\WebSocket\\": "packages/websocket/src/",
             "Hyperf\\Apex\\Metrics\\": "packages/metrics/src/",
+            "Hyperf\\Apex\\WeCom\\": "packages/wecom/src/",
             "Hyperf\\Apex\\Reliability\\": "packages/reliability/src/",
             "Hyperf\\Apex\\RateLimit\\": "packages/reliability/src/RateLimit/",
             "Hyperf\\Apex\\Idempotency\\": "packages/reliability/src/Idempotency/",
@@ -74,7 +76,8 @@
                 "Hyperf\\Apex\\ApiDoc\\Apifox\\ConfigProvider",
                 "Hyperf\\Apex\\WebSocket\\ConfigProvider",
                 "Hyperf\\Apex\\Reliability\\ConfigProvider",
-                "Hyperf\\Apex\\Metrics\\ConfigProvider"
+                "Hyperf\\Apex\\Metrics\\ConfigProvider",
+                "Hyperf\\Apex\\WeCom\\ConfigProvider"
             ]
         }
     },

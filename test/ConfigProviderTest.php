@@ -22,6 +22,11 @@ use Hyperf\Apex\WebSocket\Listener\WsGatewayRegisterListener;
 use Hyperf\Apex\WebSocket\Listener\WsIdleConnectionRecycleListener;
 use Hyperf\Apex\WebSocket\Listener\WsRuntimeCheckListener;
 use Hyperf\Apex\WebSocket\Listener\WsTableInitListener;
+use Hyperf\Apex\WeCom\Cache\AccessTokenStore;
+use Hyperf\Apex\WeCom\Config\AccountResolverInterface;
+use Hyperf\Apex\WeCom\Config\ConfigAccountResolver;
+use Hyperf\Apex\WeCom\ConfigProvider as WeComConfigProvider;
+use Hyperf\Apex\WeCom\Login\OAuthStateStore;
 use PHPUnit\Framework\TestCase;
 
 final class ConfigProviderTest extends TestCase
@@ -107,6 +112,23 @@ final class ConfigProviderTest extends TestCase
 
         $this->assertIsArray($config);
         $this->assertArrayHasKey('dependencies', $config);
+
+        foreach ($config['publish'] ?? [] as $item) {
+            $this->assertDirectoryExists($item['source']);
+        }
+    }
+
+    public function testWeComConfigProvider(): void
+    {
+        $provider = new WeComConfigProvider();
+        $config = $provider();
+
+        $this->assertIsArray($config);
+        $this->assertArrayHasKey('dependencies', $config);
+        $this->assertSame(ConfigAccountResolver::class, $config['dependencies'][AccountResolverInterface::class] ?? null);
+        // 两个键族的存储与 state 存储都要能被容器解析出来（构造参数里带不可解析的标量会在这里暴露）
+        $this->assertArrayHasKey(AccessTokenStore::class, $config['dependencies']);
+        $this->assertArrayHasKey(OAuthStateStore::class, $config['dependencies']);
 
         foreach ($config['publish'] ?? [] as $item) {
             $this->assertDirectoryExists($item['source']);

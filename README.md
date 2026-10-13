@@ -21,7 +21,8 @@
 | **`hyperf-apex/websocket`**| `packages/websocket`| **长连接网关**（多端 WebSocket 协议封装、跨 Worker 会话存储、连接索引用 Swoole Table、房间索引可选 Swoole Table 或 Redis） | `hyperf/websocket-server`；`hyperf/redis` 可选（房间索引用 Redis 时需要） |
 | **`hyperf-apex/reliability`**| `packages/reliability`| **高可用套件**（Redis 分布式限流与限流中间件、接口幂等防重与幂等中间件、事务发件箱 Outbox、企微多渠道通知、出站 HTTP 客户端） | `hyperf/redis`、`hyperf/database`、`hyperf/guzzle` |
 | **`hyperf-apex/metrics`** | `packages/metrics` | **Prometheus 监控**（基于 Swoole Table 共享内存的低基数运行指标、请求耗时拦截与大屏） | `hyperf/memory`（Swoole Table） |
-| **`hyperf-apex/apex`** | 根目录元包 | **全家桶元包（Metapackage）**（聚合依赖上述全部 6 个独立包，开箱即用） | 聚合所有子包 |
+| **`hyperf-apex/wecom`** | `packages/wecom` | **企业微信**（多企业配置与 alias 路由、进程内共用 EasyWeChat 应用、access_token 缓存与自愈、网页授权/扫码登录） | `w7corp/easywechat`、`hyperf/cache` |
+| **`hyperf-apex/apex`** | 根目录元包 | **全家桶元包（Metapackage）**（聚合依赖上述全部 7 个独立包，开箱即用） | 聚合所有子包 |
 
 ---
 
@@ -58,6 +59,9 @@ composer require hyperf-apex/reliability
 
 # 需要 Prometheus 性能监控指标时（自带 /metrics 抓取端点与 /metrics/dashboard 运维大屏）
 composer require hyperf-apex/metrics
+
+# 需要企业微信（多企业客户端、服务端接口出口、企微登录）时
+composer require hyperf-apex/wecom
 ```
 
 ### 方式 2：全量引入（全家桶）
@@ -91,6 +95,9 @@ php bin/hyperf.php vendor:publish hyperf-apex/reliability --id=migrations
 
 # 发布 Prometheus 监控配置
 php bin/hyperf.php vendor:publish hyperf-apex/metrics --id=config
+
+# 发布企业微信配置（多企业 corp_id / secret / 回调凭据）
+php bin/hyperf.php vendor:publish hyperf-apex/wecom --id=config
 ```
 
 ---
@@ -103,7 +110,7 @@ php bin/hyperf.php vendor:publish hyperf-apex/metrics --id=config
 | :--- | :--- |
 | `error` | 异常与错误：`AppExceptionHandler`、请求异常快照、Outbox 投递、WebSocket |
 | `shared` | 限流：`RateLimiter`、`RateLimitMiddleware` |
-| `outbound` | 第三方出站调用：`OutboundHttpClient` |
+| `outbound` | 第三方出站调用：`OutboundHttpClient`、企业微信组件（logger 名 `wecom`） |
 | `sql` | SQL 日志：`DbQueryExecutedListener`（记录量级由 `sql_log.full` / `slow_ms` / `writes` 控制） |
 | `access` | 访问日志：`RequestTimingMiddleware`（与 `access_log` 配置配套） |
 
@@ -160,11 +167,11 @@ php bin/hyperf.php vendor:publish hyperf-apex/metrics --id=config
 
 ## 关于本仓库的发布方式
 
-本仓库是 Monorepo，对外的 6 个包由两条路径发布：
+本仓库是 Monorepo，对外的 7 个包由两条路径发布：
 
 | Composer 包名 | 发布来源 |
 | :--- | :--- |
-| `hyperf-apex/core`、`apidoc`、`apidoc-apifox`、`websocket`、`reliability`、`metrics` | 在 `master` 打 `vX.Y.Z` tag 后，由 `.github/workflows/split.yml` 拆分并推送到 `lbg-sys/hyperf-apex-{包名}` 只读仓，Packagist 从只读仓索引版本 |
+| `hyperf-apex/core`、`apidoc`、`apidoc-apifox`、`websocket`、`reliability`、`metrics`、`wecom` | 在 `master` 打 `vX.Y.Z` tag 后，由 `.github/workflows/split.yml` 拆分并推送到 `lbg-sys/hyperf-apex-{包名}` 只读仓，Packagist 从只读仓索引版本 |
 | `hyperf-apex/apex`（元包） | 直接由本仓库 `lbg-sys/hyperf-apex` 发布；`packages/`、`test/` 等已标记 `export-ignore`，dist 包只含 `composer.json` 与 `LICENSE` |
 
 发布流程：更新 `CHANGELOG.md` → 在 `master` 上打 `git tag -a vX.Y.Z -m "chore(release): vX.Y.Z"` → `git push origin vX.Y.Z`。

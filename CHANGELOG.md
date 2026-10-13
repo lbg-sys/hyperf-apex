@@ -3,6 +3,32 @@
 本文件记录 `hyperf-apex/*` 各组件包的对外变更，格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 当前处于 0.x 初始开发阶段：API 与数据表结构不保证稳定，破坏性改动不抬主版本号；进入 1.0.0 后才按语义化版本。
 
+## [Unreleased]
+
+### 新增
+
+- **新包 `hyperf-apex/wecom`（企业微信）**：多企业配置与 alias 路由、进程内复用 EasyWeChat
+  `Work\Application`、access_token 缓存与自愈、网页授权 / 扫码登录。底座是 `w7corp/easywechat` 6.x。
+  - `AccountResolverInterface` 是配置来源的唯一契约，默认实现读 `config/autoload/wecom.php`；
+    企业配置放数据库/配置中心时替换这一个绑定即可。
+  - `WeComManager::api()` 是服务端接口出口：判定响应体 `errcode`、把失败归一成
+    `BusinessException`（未认证 401 / 服务不可用 503），并在 `40014` / `42001`
+    （token 被同企业的其它应用顶掉）时清缓存重发一次。原始错误码从
+    `WeComException::getWeComErrorCode()` 与 `getData()['errcode']` 取。
+  - access_token 的缓存键由组件指定（alias + corp_id 摘要）而不是 EasyWeChat 的默认键 ——
+    默认键把 `secret` 写进了缓存键名，键名会被 `KEYS`、监控面板与慢查询日志原样打出来。
+    缓存 TTL 会减去 `token_expire_ahead`（默认 300 秒）。
+  - `WeComLoginService` 负责「发起授权 → 回调换成员 userid」：两个入口地址（客户端内网页授权、
+    PC 扫码）共用同一 `redirect_uri` 与一次性 `state`，`state` 校验通过即作废，
+    code 换 userid 走的就是上面那条接口出口（同一个 Application、同一个 token 缓存）。
+  - 组件依赖应用的 PSR-16 缓存（`hyperf/cache`）：该存储必须跨 worker 共享，
+    否则每个 worker 各持一个 token 会互相顶掉。
+
+### 应用侧需要手工同步
+
+- 维护者：`SPLIT_TOKEN` 现在需要对 7 个只读仓有写权限（新增 `lbg-sys/hyperf-apex-wecom`），
+  并需为新仓配置 Packagist 自动索引（仓库 Webhook 或 Packagist GitHub App 授权）。
+
 ## [0.1.0] - 2026-10-12
 
 **首个预发布版本。** 此前仓库曾以 `1.0.0`～`4.1.0` 打过内部开发 tag（尚未对外使用，已删除），

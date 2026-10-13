@@ -1,6 +1,6 @@
 name: Split
 
-# 打版本 tag 时，把 6 个子包推送到各自的只读仓，Packagist 从只读仓索引版本。
+# 打版本 tag 时，把 7 个子包推送到各自的只读仓，Packagist 从只读仓索引版本。
 #
 # 为什么必须拆：Composer 的 VCS 仓库只读「仓库根」的 composer.json，Packagist 一个仓库也只能提供
 # 一个包名。消费者要能 `composer require hyperf-apex/core`，就必须有一个以 packages/core 为根、
@@ -9,8 +9,8 @@ name: Split
 # 元包 hyperf-apex/apex 不参与拆分：它的包名与本源仓库一致，直接由 lbg-sys/hyperf-apex 发布即可
 # （`.gitattributes` 已把 packages/、test/ 等标记 export-ignore，dist 包只留 composer.json 与 LICENSE）。
 #
-# 前置条件：仓库 Secrets 中配置 SPLIT_TOKEN，需对 6 个只读仓有 contents: write 权限
-# （细粒度 PAT 勾选 6 个仓的 Contents: Read and write；经典 PAT 用 repo scope）。
+# 前置条件：仓库 Secrets 中配置 SPLIT_TOKEN，需对 7 个只读仓有 contents: write 权限
+# （细粒度 PAT 勾选 7 个仓的 Contents: Read and write；经典 PAT 用 repo scope）。
 on:
   push:
     tags:
@@ -56,6 +56,7 @@ jobs:
           - websocket
           - reliability
           - metrics
+          - wecom
     steps:
       # subtree split 要遍历完整历史，默认的浅克隆会算出错误结果。
       - name: 检出代码
@@ -99,7 +100,7 @@ jobs:
           # Secret 缺失时立刻给出可执行的提示，而不是让 git 抛一个含义不明的 403。
           if [ -z "${SPLIT_TOKEN}" ]; then
               echo "缺少 SPLIT_TOKEN：请在主仓 Settings → Secrets and variables → Actions 添加，" \
-                   "值用对 6 个只读仓有写权限的 PAT（要求见本文件顶部注释）。" >&2
+                   "值用对 7 个只读仓有写权限的 PAT（要求见本文件顶部注释）。" >&2
               exit 1
           fi
 

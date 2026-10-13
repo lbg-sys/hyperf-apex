@@ -47,6 +47,6 @@ composer62 analyse    # PHPStan level 6，必须 0 error
 
 1. 合并到 `master` 后更新 `CHANGELOG.md`（把 `Unreleased` 段落固化为版本号）。
 2. `git tag -a vX.Y.Z -m "chore(release): vX.Y.Z"` 并推送 tag；tag 只增不改。
-3. tag 推送会触发 `.github/workflows/split.yml`，把 6 个子包推送到对应的只读仓
-   （`hyperf-apex-{core,apidoc,apidoc-apifox,websocket,reliability,metrics}`），Packagist 随之索引新版本。
+3. tag 推送会触发 `.github/workflows/split.yml`，把 7 个子包推送到对应的只读仓
+   （`hyperf-apex-{core,apidoc,apidoc-apifox,websocket,reliability,metrics,wecom}`），Packagist 随之索引新版本。
 4. 元包 `hyperf-apex/apex` 直接由本仓库（`lbg-sys/hyperf-apex`）发布，无需拆分。
