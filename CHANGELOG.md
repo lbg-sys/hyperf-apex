@@ -5,6 +5,22 @@
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-10-21
+
+### 新增
+
+- `hyperf-apex/wecom`：新增依赖 `limingxinleo/easywechat-classmap`（`^1.1`），
+  解决企业微信 SDK 相关类的自动加载问题。
+
+### 变更
+
+- `hyperf-apex/wecom`：完善 `publish/config/wecom.php` 中 `redirect_uri` 的注释：明确它应填
+  前端回调页的完整地址（企微在其后附上 `code` 与 `state`），而非后端登录接口地址；
+  并补充可信域名配置要求与「写原始地址、不要 URL-encode」的说明。仅注释变更，
+  不影响默认值与已发布应用的行为。
+
+## [0.1.2] - 2026-10-13
+
 ### 新增
 
 - `hyperf-apex/wecom`：`WeComLoginService::buildAuthorizeUrl()` 一次返回**三种**授权入口，新增
