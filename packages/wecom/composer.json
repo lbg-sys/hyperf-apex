@@ -28,6 +28,7 @@
         "hyperf/cache": "~3.2.0",
         "hyperf/config": "~3.2.0",
         "hyperf/logger": "~3.2.0",
+        "limingxinleo/easywechat-classmap": "^1.1",
         "psr/simple-cache": "^1.0 || ^2.0 || ^3.0",
         "w7corp/easywechat": "^6.7"
     },
